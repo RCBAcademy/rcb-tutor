@@ -94,7 +94,7 @@ html,body{height:100%;font-family:'Lexend',sans-serif;font-size:14px;color:var(-
 .wm{font-size:.72rem;color:rgba(255,255,255,.38)}
 
 /* KPI */
-.kgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.3rem}
+.kgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.3rem}
 .kcard{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:1.1rem 1.3rem;box-shadow:var(--sh);display:flex;align-items:center;gap:.9rem}
 .kico{width:40px;height:40px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
 .kico.b{background:var(--sky-dim)}.kico.g{background:rgba(34,200,138,.12)}.kico.a{background:rgba(240,160,48,.12)}
@@ -207,7 +207,7 @@ tr:hover td{background:var(--off)}
       <input type="password" id="lPass" placeholder="••••••••" autocomplete="current-password">
     </div>
     <button class="btn-login" id="loginBtn" onclick="doLogin()">Accedi</button>
-    <div class="login-foot">Problemi di accesso? Scrivi a admin@rcbacademy.com</div>
+    <div class="login-foot">Problemi di accesso? Scrivi a <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="b5d4d1d8dcdbf5c7d6d7d4d6d4d1d0d8cc9bd6dad8">[email&#160;protected]</a></div>
   </div>
 </div>
 
@@ -272,6 +272,7 @@ tr:hover td{background:var(--off)}
           <div class="kcard"><div class="kico b">⏱️</div><div><div class="kv" id="kOre">0h</div><div class="kl">Ore totali</div></div></div>
           <div class="kcard"><div class="kico g">👤</div><div><div class="kv" id="kStu">0</div><div class="kl">Studenti seguiti</div></div></div>
           <div class="kcard"><div class="kico a">📋</div><div><div class="kv" id="kLez">0</div><div class="kl">Lezioni registrate</div></div></div>
+          <div class="kcard"><div class="kico g">💶</div><div><div class="kv" id="kComp">€0</div><div class="kl">Compenso totale</div></div></div>
         </div>
         <div class="card">
           <div class="card-ttl">Ultime lezioni</div>
@@ -304,10 +305,23 @@ tr:hover td{background:var(--off)}
               <div class="field-hint" id="stuHint">Scrivi solo il nome. Il sistema assegnerà un ID univoco per distinguere studenti omonimi.</div>
               <span class="preview-badge" id="stuPreview"></span>
             </div>
-            <div class="fg"><label>Materia *</label><input type="text" id="fMat" placeholder="Matematica"></div>
-            <div class="fg"><label>Ore svolte *</label><input type="number" id="fOre" min="0.5" max="8" step="0.5" placeholder="1.5"></div>
+            <div class="fg"><label>Tariffa €/h *</label>
+              <select id="fTariffa">
+                <option value="">— Seleziona tariffa —</option>
+                <option value="8">8 €/h — Medie (1° studente)</option>
+                <option value="10">10 €/h — Medie</option>
+                <option value="11">11 €/h — Superiori/Test/Cert. (1° studente)</option>
+                <option value="13">13 €/h — Superiori/Test/Cert.</option>
+                <option value="13uni">13 €/h — Università (1° studente)</option>
+                <option value="15">15 €/h — Università</option>
+              </select>
+            </div>
+            <div class="fg"><label>Ore svolte *</label><input type="number" id="fOre" min="0.5" max="8" step="0.5" placeholder="1.5" oninput="aggiornaPreviewCompenso()"></div>
           </div>
           <div class="fg"><label>Note</label><textarea id="fNote" placeholder="Argomenti trattati, progressi..."></textarea></div>
+          <div id="compensoPreview" style="display:none;background:rgba(34,200,138,.1);border:1px solid rgba(34,200,138,.3);border-radius:8px;padding:.6rem 1rem;font-size:.82rem;color:#167a5a;margin-bottom:.6rem">
+            💶 Compenso lezione: <strong id="compensoVal">—</strong>
+          </div>
           <div class="fa">
             <button class="btn btn-p" id="saveBtn" onclick="salva()">Salva lezione</button>
             <button class="btn btn-g" onclick="toggleForm(false)">Annulla</button>
@@ -316,7 +330,7 @@ tr:hover td{background:var(--off)}
 
         <div class="tw">
           <table>
-            <thead><tr><th>Data</th><th>Studente</th><th>Materia</th><th>Ore</th><th>Note</th><th></th></tr></thead>
+            <thead><tr><th>Data</th><th>Studente</th><th>Tariffa</th><th>Ore</th><th>Compenso</th><th>Note</th><th></th></tr></thead>
             <tbody id="regBody"><tr><td colspan="6"><div class="empty"><div class="big">📋</div>Nessuna lezione. Clicca "+ Aggiungi lezione".</div></td></tr></tbody>
           </table>
         </div>
@@ -329,7 +343,7 @@ tr:hover td{background:var(--off)}
           <div class="drive-ico">📁</div>
           <h3>Cartella materiali RCB Academy</h3>
           <p>RCB Academy gestisce i materiali didattici su <strong>Google Drive</strong>.<br>L'amministratore ha creato e condiviso con te una cartella dedicata.</p>
-          <div id="driveArea"><div class="no-link">⏳ Cartella Drive non ancora assegnata.<br>Contatta: <strong>admin@rcbacademy.com</strong></div></div>
+          <div id="driveArea"><div class="no-link">⏳ Cartella Drive non ancora assegnata.<br>Contatta: <strong><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="d2b3b6bfbbbc92a0b1b0b3b1b3b6b7bfabfcb1bdbf">[email&#160;protected]</a></strong></div></div>
         </div>
         <div class="card">
           <div class="card-ttl">Come funziona</div>
@@ -352,25 +366,22 @@ tr:hover td{background:var(--off)}
             <div class="ir"><span class="il">Ruolo</span><span class="iv">Tutor RCB Academy</span></div>
             <div class="ir"><span class="il">Stato</span><span class="iv" style="color:var(--success)">✅ Attivo</span></div>
           </div>
-          <div>
-            <div class="stt-h">Cambia password</div>
-            <div class="fg"><label>Nuova password</label><input type="password" id="nPass" placeholder="Almeno 8 caratteri"></div>
-            <div class="fg"><label>Conferma password</label><input type="password" id="nPassC" placeholder="Ripeti la password"></div>
-            <button class="btn btn-p" onclick="cambiaPass()">Aggiorna password</button>
+          <div style="background:rgba(240,160,48,.08);border:1px solid rgba(240,160,48,.25);border-radius:8px;padding:.8rem 1rem;font-size:.76rem;color:#6b4c00;">
+            🔐 Per modificare la password contatta l&#39;amministrazione: <strong>admin@rcbacademy.com</strong>
           </div>
         </div>
         <div class="card">
           <div class="stt-h">Privacy, GDPR e protezione dati</div>
           <div style="font-size:.78rem;color:var(--muted);line-height:1.7">
             Tutti i dati sono trattati da <strong>PT AITELOR RCB GLOBAL</strong> nel rispetto del GDPR (Reg. UE 2016/679), del D.Lgs. 196/2003 e della Legge indonesiana n. 27/2022 (PDP).<br>
-            Per richieste privacy: admin@rcbacademy.com
+            Per richieste privacy: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="19787d747077596b7a7b787a787d7c7460377a7674">[email&#160;protected]</a>
           </div>
           <div class="gdpr-box">
             <strong>⚠️ Informativa trasferimenti extra-UE (Art. 13 GDPR)</strong><br>
             I dati inseriti in questa dashboard sono archiviati su <strong>Firebase/Firestore (Google LLC, USA)</strong> — trasferimento garantito da Clausole Contrattuali Standard (SCC) e certificazione EU-US Data Privacy Framework.<br>
             La dashboard è ospitata su <strong>GitHub Pages (Microsoft Corp., USA)</strong> — nessun dato personale archiviato su GitHub.<br>
             Il Titolare del trattamento (PT AITELOR RCB GLOBAL) ha sede in <strong>Indonesia</strong>, paese privo di decisione di adeguatezza UE. I trasferimenti verso la sede sono regolati da SCC.<br><br>
-            <strong>🛡️ Tutela minorenni UE:</strong> il sistema tratta dati pseudonimizzati degli studenti (solo nome + numero progressivo). Non inserire mai cognomi, email o altri dati identificativi degli studenti nel registro ore. In caso di dubbi, contatta admin@rcbacademy.com.
+            <strong>🛡️ Tutela minorenni UE:</strong> il sistema tratta dati pseudonimizzati degli studenti (solo nome + numero progressivo). Non inserire mai cognomi, email o altri dati identificativi degli studenti nel registro ore. In caso di dubbi, contatta <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="a4c5c0c9cdcae4d6c7c6c5c7c5c0c1c9dd8ac7cbc9">[email&#160;protected]</a>.
           </div>
         </div>
       </div>
@@ -379,7 +390,7 @@ tr:hover td{background:var(--off)}
   </main>
 </div>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 /* ══════════════════════════════════════════════════════
    ⚙️  CONFIGURAZIONE FIREBASE — sostituisci con i tuoi valori
    Firebase Console → Impostazioni progetto → Le tue app → Web
@@ -482,24 +493,7 @@ function updateUI(u, p) {
   }
 }
 
-/* ══════════════════════════════════════════════════════
-   CAMBIO PASSWORD
-══════════════════════════════════════════════════════ */
-async function cambiaPass() {
-  const np = document.getElementById('nPass').value;
-  const nc = document.getElementById('nPassC').value;
-  if (!np || np.length < 8) { toast('La password deve essere di almeno 8 caratteri.','e'); return; }
-  if (np !== nc)            { toast('Le password non coincidono.','e'); return; }
-  try {
-    await me.updatePassword(np);
-    document.getElementById('nPass').value = '';
-    document.getElementById('nPassC').value = '';
-    toast('Password aggiornata ✅','s');
-  } catch(e) {
-    if (e.code === 'auth/requires-recent-login') toast('Per sicurezza, esci e rientra prima di cambiare la password.','e');
-    else toast('Errore aggiornamento password.','e');
-  }
-}
+
 
 /* ══════════════════════════════════════════════════════
    CARICA LEZIONI
@@ -524,6 +518,27 @@ async function loadLezioni() {
 }
 
 /* ══════════════════════════════════════════════════════
+   PREVIEW COMPENSO NEL FORM
+══════════════════════════════════════════════════════ */
+function aggiornaPreviewCompenso() {
+  const ore      = parseFloat(document.getElementById('fOre').value);
+  const tariffa  = parseFloat(document.getElementById('fTariffa').value);
+  const prev     = document.getElementById('compensoPreview');
+  const val      = document.getElementById('compensoVal');
+  if (ore > 0 && tariffa > 0) {
+    val.textContent = '€' + (ore * tariffa).toFixed(2);
+    prev.style.display = 'block';
+  } else {
+    prev.style.display = 'none';
+  }
+}
+// Aggiorna preview anche al cambio tariffa
+document.addEventListener('DOMContentLoaded', () => {
+  const sel = document.getElementById('fTariffa');
+  if(sel) sel.addEventListener('change', aggiornaPreviewCompenso);
+});
+
+/* ══════════════════════════════════════════════════════
    RENDER TABELLA
 ══════════════════════════════════════════════════════ */
 function renderTabella() {
@@ -536,9 +551,10 @@ function renderTabella() {
     <tr>
       <td>${fd(l.data)}</td>
       <td><span class="stu-badge">${x(l.nomeStudente)}</span></td>
-      <td><span class="badge">${x(l.materia)}</span></td>
+      <td><span class="badge">${l.tariffa}€/h</span></td>
       <td class="td-h">${l.ore}h</td>
-      <td style="color:var(--muted);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${x(l.note||'—')}</td>
+      <td class="td-h" style="color:var(--success)">€${(l.ore * l.tariffa).toFixed(2)}</td>
+      <td style="color:var(--muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${x(l.note||'—')}</td>
       <td><div class="tda">
         <button class="btn btn-g btn-sm" onclick="modifica('${l.id}')">✏️</button>
         <button class="btn btn-d btn-sm" onclick="elimina('${l.id}')">🗑️</button>
@@ -552,10 +568,13 @@ function renderTabella() {
 function renderKPI() {
   const tot  = cache.reduce((s,l) => s + (parseFloat(l.ore)||0), 0);
   const stus = new Set(cache.map(l => l.nomeStudente));
+  const totComp = cache.reduce((s,l) => s + (parseFloat(l.ore)||0)*(parseFloat(l.tariffa)||0), 0);
   document.getElementById('kOre').textContent  = tot + 'h';
   document.getElementById('kStu').textContent  = stus.size;
   document.getElementById('kLez').textContent  = cache.length;
   document.getElementById('totOre').textContent = tot + 'h';
+  const kComp = document.getElementById('kComp');
+  if(kComp) kComp.textContent = '€' + totComp.toFixed(2);
   const ul  = document.getElementById('homeUlt');
   const top = cache.slice(0,3);
   if (!top.length) {
@@ -565,7 +584,7 @@ function renderKPI() {
   ul.innerHTML = top.map(l => `
     <div style="display:flex;justify-content:space-between;align-items:center;padding:.6rem 0;border-bottom:1px solid var(--border)">
       <div>
-        <div style="font-size:.82rem;font-weight:500"><span class="stu-badge">${x(l.nomeStudente)}</span> — <span class="badge">${x(l.materia)}</span></div>
+        <div style="font-size:.82rem;font-weight:500"><span class="stu-badge">${x(l.nomeStudente)}</span> — <span class="badge">${l.tariffa}€/h</span> <span style="color:var(--success);font-weight:700">€${(l.ore * l.tariffa).toFixed(2)}</span></div>
         <div style="font-size:.7rem;color:var(--muted)">${fd(l.data)}</div>
       </div>
       <div style="font-size:.95rem;font-weight:700;color:var(--sky)">${l.ore}h</div>
@@ -674,7 +693,9 @@ function toggleForm(apri) {
 }
 
 function resetForm() {
-  ['fData','fStu','fMat','fOre','fNote'].forEach(id => document.getElementById(id).value = '');
+  ['fData','fStu','fOre','fNote'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('fTariffa').value = '';
+  document.getElementById('compensoPreview').style.display = 'none';
   document.getElementById('stuSug').style.display  = 'none';
   document.getElementById('stuPreview').style.display = 'none';
   document.getElementById('stuHint').textContent = 'Scrivi solo il nome. Il sistema assegnerà un ID univoco per distinguere studenti omonimi.';
@@ -689,14 +710,15 @@ function resetForm() {
 async function salva() {
   const data  = document.getElementById('fData').value;
   const stuRaw= document.getElementById('fStu').value.trim();
-  const mat   = document.getElementById('fMat').value.trim();
+  const tariffaRaw = document.getElementById('fTariffa').value;
+  const tariffa = parseFloat(tariffaRaw);
   const ore   = parseFloat(document.getElementById('fOre').value);
   const note  = document.getElementById('fNote').value.trim();
 
-  if (!data)         { toast('Inserisci la data.','e'); return; }
-  if (!stuRaw)       { toast('Inserisci il nome dello studente.','e'); return; }
-  if (!mat)          { toast('Inserisci la materia.','e'); return; }
-  if (!ore || ore<=0){ toast('Inserisci le ore svolte.','e'); return; }
+  if (!data)              { toast('Inserisci la data.','e'); return; }
+  if (!stuRaw)            { toast('Inserisci il nome dello studente.','e'); return; }
+  if (!tariffaRaw)        { toast('Seleziona la tariffa.','e'); return; }
+  if (!ore || ore<=0)     { toast('Inserisci le ore svolte.','e'); return; }
 
   const btn = document.getElementById('saveBtn');
   btn.disabled = true; btn.textContent = 'Elaborazione…';
@@ -710,7 +732,7 @@ async function salva() {
     const rec = {
       tutorID: me.uid,
       nomeStudente,
-      data, ore, materia: mat,
+      data, ore, tariffa,
       note: note||null,
       aggiornatoAt: firebase.firestore.FieldValue.serverTimestamp()
     };
@@ -721,7 +743,7 @@ async function salva() {
     } else {
       rec.createdAt = firebase.firestore.FieldValue.serverTimestamp();
       await db.collection('registro_ore').add(rec);
-      toast(`Lezione salvata — studente: ${nomeStudente} ✅`,'s');
+      toast(`Lezione salvata — ${nomeStudente} · €${(ore*tariffa).toFixed(2)} ✅`,'s');
     }
     toggleForm(false);
     await loadLezioni();
@@ -743,7 +765,9 @@ function modifica(id) {
   editId = id;
   document.getElementById('fData').value = l.data;
   document.getElementById('fStu').value  = l.nomeStudente;
-  document.getElementById('fMat').value  = l.materia;
+  const sel = document.getElementById('fTariffa');
+  sel.value = String(l.tariffa);
+  if(!sel.value) sel.value = ''; // fallback if value doesn't match option
   document.getElementById('fOre').value  = l.ore;
   document.getElementById('fNote').value = l.note||'';
   const prev = document.getElementById('stuPreview');
@@ -876,6 +900,38 @@ registro_ore/{docId}
 
 student_registry/{normalizedName}    ← es. "marco", "sofia", "luca"
   count:  3                          ← contatore globale cross-tutor
--->
-</body>
-</html>
+
+═══════════════════════════════════════════════════════════════════════
+ 🌐  HOSTINGER — ISTRUZIONI EMBED
+═══════════════════════════════════════════════════════════════════════
+
+ 1. Pubblica questo file su GitHub Pages (vedi guida sotto)
+ 2. Nel Website Builder di Hostinger, apri la pagina "Log In Tutor"
+ 3. Svuota COMPLETAMENTE il Custom Code widget
+ 4. Incolla SOLO questo codice:
+
+<div style="position:fixed;inset:0;z-index:99999;background:#161a38;">
+  <iframe
+    src="https://TUO-USERNAME.github.io/rcb-tutor/"
+    style="width:100%;height:100%;border:none;display:block;"
+    allow="same-origin scripts"
+  ></iframe>
+</div>
+
+ IMPORTANTE: position:fixed fa sì che il div copra l'intera finestra
+ del browser, inclusa la navbar di Hostinger — è il comportamento
+ corretto per una pagina di login a schermo intero.
+
+ Se la navbar di Hostinger è importante sulla pagina, usa invece:
+<div style="position:fixed;top:60px;left:0;right:0;bottom:0;z-index:99999;">
+  <iframe src="https://..." style="width:100%;height:100%;border:none;"></iframe>
+</div>
+ (sostituisci 60px con l'altezza reale della tua navbar)
+
+═══════════════════════════════════════════════════════════════════════
+ 📁  GITHUB PAGES — GUIDA PASSO PASSO
+═══════════════════════════════════════════════════════════════════════
+
+ 1. Vai su github.com → crea account gratuito
+ 2. "New repository"
+
