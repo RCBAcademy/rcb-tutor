@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RCB Academy — Area Tutor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&family=Fraunces:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<style>
+:root{
+  --navy:#1f244a;--navy-dark:#161a38;--navy-mid:#2a3060;
+  --sky:#00bbff;--sky-dim:rgba(0,187,255,.15);--sky-glow:rgba(0,187,255,.07);
+  --white:#fff;--off:#f4f6fb;--border:#e8ecf4;--text:#1f244a;--muted:#7a82a8;
+  --danger:#e05252;--success:#22c88a;--warn:#f0a030;
+  --sb-w:240px;--r:12px;--sh:0 2px 12px rgba(31,36,74,.08);--sh-lg:0 8px 32px rgba(31,36,74,.14)
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'Lexend',sans-serif;font-size:14px;color:var(--text);background:var(--off)}
+.screen{display:none}.screen.active{display:flex}
+
+/* LOADER */
+#loader{position:fixed;inset:0;background:var(--navy-dark);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:1rem;z-index:9999}
+#loader .brand{font-family:'Fraunces',serif;font-size:1.8rem;font-weight:600;color:#fff}
+#loader .brand em{color:var(--sky);font-style:italic}
+#loader small{color:rgba(255,255,255,.3);font-size:.75rem;margin-top:.3rem}
+.spin{display:inline-block;width:22px;height:22px;border:2px solid rgba(0,187,255,.3);border-top-color:var(--sky);border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* LOGIN */
+#loginScreen{min-height:100vh;align-items:center;justify-content:center;background:var(--navy-dark);position:relative;overflow:hidden}
+#loginScreen::before{content:'';position:absolute;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(0,187,255,.12) 0%,transparent 70%);top:-200px;right:-150px;pointer-events:none}
+.login-card{width:100%;max-width:400px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:2.8rem 2.4rem;backdrop-filter:blur(12px);position:relative;z-index:1}
+.login-logo{text-align:center;margin-bottom:2rem}
+.login-logo .brand{font-family:'Fraunces',serif;font-size:1.8rem;font-weight:600;color:#fff}
+.login-logo .brand em{color:var(--sky);font-style:italic}
+.login-logo sub{display:block;font-size:.7rem;color:rgba(255,255,255,.35);letter-spacing:1px;text-transform:uppercase;margin-top:.3rem}
+.login-h{font-size:1.05rem;font-weight:600;color:#fff;margin-bottom:.25rem}
+.login-s{font-size:.78rem;color:rgba(255,255,255,.4);margin-bottom:1.8rem}
+.lf{margin-bottom:1rem}
+.lf label{display:block;font-size:.7rem;font-weight:600;color:rgba(255,255,255,.5);letter-spacing:.5px;text-transform:uppercase;margin-bottom:.35rem}
+.lf input{width:100%;padding:.72rem 1rem;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:var(--r);font-family:'Lexend',sans-serif;font-size:.88rem;color:#fff;outline:none;transition:border .2s,background .2s}
+.lf input::placeholder{color:rgba(255,255,255,.22)}
+.lf input:focus{border-color:var(--sky);background:rgba(0,187,255,.06)}
+.login-err{display:none;background:rgba(224,82,82,.15);border:1px solid rgba(224,82,82,.35);border-radius:8px;padding:.6rem .9rem;font-size:.78rem;color:#ff9a9a;margin-bottom:.9rem}
+.btn-login{width:100%;padding:.85rem;background:var(--sky);color:var(--navy-dark);font-family:'Lexend',sans-serif;font-size:.9rem;font-weight:700;border:none;border-radius:var(--r);cursor:pointer;transition:all .2s}
+.btn-login:hover{background:#00d4ff;transform:translateY(-1px);box-shadow:0 4px 20px rgba(0,187,255,.35)}
+.btn-login:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.login-foot{text-align:center;margin-top:1.4rem;font-size:.7rem;color:rgba(255,255,255,.22)}
+
+/* DASHBOARD LAYOUT */
+#dashScreen{height:100vh;overflow:hidden}
+.sidebar{width:var(--sb-w);min-width:var(--sb-w);height:100vh;background:var(--navy-dark);display:flex;flex-direction:column;overflow:hidden;position:relative}
+.sidebar::after{content:'';position:absolute;bottom:0;left:0;right:0;height:180px;background:radial-gradient(ellipse at bottom left,rgba(0,187,255,.07) 0%,transparent 70%);pointer-events:none}
+.sb-top{padding:1.5rem 1.4rem 1rem;border-bottom:1px solid rgba(255,255,255,.06)}
+.sb-brand{font-family:'Fraunces',serif;font-size:1.2rem;font-weight:600;color:#fff}
+.sb-brand em{color:var(--sky);font-style:italic}
+.sb-role{font-size:.62rem;color:rgba(255,255,255,.28);letter-spacing:1px;text-transform:uppercase;margin-top:.2rem}
+.sb-prof{padding:.9rem 1.4rem;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;gap:.65rem}
+.sb-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--sky) 0%,#0088cc 100%);display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:700;color:var(--navy-dark);flex-shrink:0}
+.sb-pn{font-size:.78rem;font-weight:600;color:#fff;line-height:1.2}
+.sb-pe{font-size:.63rem;color:rgba(255,255,255,.32)}
+.sb-nav{flex:1;padding:.8rem 0;overflow-y:auto}
+.sb-sec{font-size:.58rem;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:rgba(255,255,255,.18);padding:.55rem 1.4rem .25rem}
+.ni{display:flex;align-items:center;gap:.65rem;padding:.62rem 1.4rem;cursor:pointer;transition:all .15s;border-left:3px solid transparent;font-size:.82rem;font-weight:400;color:rgba(255,255,255,.45)}
+.ni:hover{background:rgba(255,255,255,.04);color:rgba(255,255,255,.75)}
+.ni.active{border-left-color:var(--sky);background:var(--sky-glow);color:#fff;font-weight:600}
+.ni svg{width:17px;height:17px;flex-shrink:0;opacity:.7}.ni.active svg{opacity:1}
+.sb-foot{padding:.9rem 1.4rem;border-top:1px solid rgba(255,255,255,.06)}
+.btn-out{display:flex;align-items:center;gap:.55rem;padding:.55rem .75rem;border-radius:8px;font-family:'Lexend',sans-serif;font-size:.76rem;font-weight:500;color:rgba(255,255,255,.35);background:none;border:none;cursor:pointer;width:100%;transition:all .15s}
+.btn-out:hover{background:rgba(224,82,82,.1);color:#ff8a8a}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--off)}
+.topbar{height:54px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 1.8rem;flex-shrink:0}
+.topbar-ttl{font-size:.95rem;font-weight:600;color:var(--navy)}
+.topbar-date{font-size:.7rem;color:var(--muted)}
+.content{flex:1;overflow-y:auto;padding:1.6rem}
+
+.view{display:none}.view.active{display:block}
+
+/* CARDS */
+.card{background:#fff;border-radius:var(--r);border:1px solid var(--border);box-shadow:var(--sh);padding:1.3rem 1.5rem;margin-bottom:1.1rem}
+.card-ttl{font-size:.72rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin-bottom:.9rem}
+
+/* WELCOME */
+.wcard{background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy-mid) 100%);border-radius:16px;padding:1.7rem 1.9rem;color:#fff;margin-bottom:1.3rem;position:relative;overflow:hidden}
+.wcard::after{content:'';position:absolute;right:-40px;top:-40px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(0,187,255,.18) 0%,transparent 70%)}
+.wg{font-size:.72rem;color:rgba(255,255,255,.45);margin-bottom:.25rem}
+.wn{font-size:1.4rem;font-weight:700;color:#fff;margin-bottom:.5rem}
+.wn em{color:var(--sky);font-style:normal}
+.wm{font-size:.72rem;color:rgba(255,255,255,.38)}
+
+/* KPI */
+.kgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.3rem}
+.kcard{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:1.1rem 1.3rem;box-shadow:var(--sh);display:flex;align-items:center;gap:.9rem}
+.kico{width:40px;height:40px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+.kico.b{background:var(--sky-dim)}.kico.g{background:rgba(34,200,138,.12)}.kico.a{background:rgba(240,160,48,.12)}
+.kv{font-size:1.45rem;font-weight:700;color:var(--navy);line-height:1}
+.kl{font-size:.7rem;color:var(--muted);margin-top:.18rem}
+
+.rh{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.1rem;gap:.8rem}
+.pg-ttl{font-size:1.05rem;font-weight:700;color:var(--navy)}
+.pg-sub{font-size:.75rem;color:var(--muted);margin-top:.1rem}
+
+/* TOTALE ORE */
+.ore-tot{background:linear-gradient(135deg,var(--sky) 0%,#0095cc 100%);border-radius:var(--r);padding:.9rem 1.3rem;display:flex;align-items:center;justify-content:space-between;margin-bottom:1.1rem;color:#fff}
+.ore-tot .lbl{font-size:.7rem;opacity:.8}
+.ore-tot .val{font-size:1.9rem;font-weight:700}
+
+/* FORM */
+.add-form{display:none;background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:1.3rem 1.5rem;margin-bottom:1.1rem;box-shadow:var(--sh)}
+.add-form.open{display:block}
+.fg{margin-bottom:.9rem}
+.fg label{display:block;font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin-bottom:.28rem}
+.fg input,.fg select,.fg textarea{width:100%;padding:.62rem .88rem;border:1.5px solid var(--border);border-radius:8px;font-family:'Lexend',sans-serif;font-size:.84rem;color:var(--text);background:#fff;outline:none;transition:border .2s,box-shadow .2s}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--sky);box-shadow:0 0 0 3px rgba(0,187,255,.1)}
+.fg textarea{resize:vertical;min-height:65px}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.fa{display:flex;gap:.7rem;margin-top:.4rem}
+.field-hint{font-size:.67rem;color:var(--muted);margin-top:.2rem}
+.preview-badge{display:inline-block;padding:.18rem .55rem;border-radius:20px;font-size:.7rem;font-weight:700;background:var(--sky-dim);color:#006a99;margin-top:.25rem;display:none}
+
+/* STUDENT AUTOCOMPLETE */
+.stu-wrap{position:relative}
+.stu-suggestions{position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid var(--sky);border-top:none;border-radius:0 0 8px 8px;z-index:100;max-height:160px;overflow-y:auto;display:none;box-shadow:var(--sh)}
+.stu-sug-item{padding:.5rem .88rem;font-size:.84rem;cursor:pointer;color:var(--text);transition:background .12s}
+.stu-sug-item:hover{background:var(--sky-dim)}
+.stu-sug-new{color:var(--muted);font-style:italic}
+
+/* TABLE */
+.tw{background:#fff;border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh)}
+table{width:100%;border-collapse:collapse}
+thead{background:var(--off);border-bottom:1px solid var(--border)}
+th{text-align:left;padding:.7rem .95rem;font-size:.67rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted)}
+td{padding:.82rem .95rem;font-size:.81rem;border-bottom:1px solid var(--border);color:var(--text)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--off)}
+.tda{display:flex;gap:.35rem}
+.td-h{font-weight:700;color:var(--sky)}
+.empty{padding:2.5rem;text-align:center;color:var(--muted);font-size:.82rem}
+.empty .big{font-size:1.8rem;margin-bottom:.4rem}
+.badge{display:inline-block;padding:.12rem .5rem;border-radius:20px;font-size:.66rem;font-weight:600;background:var(--sky-dim);color:#007aaa}
+.stu-badge{display:inline-block;padding:.12rem .5rem;border-radius:20px;font-size:.72rem;font-weight:700;background:rgba(240,160,48,.12);color:#8a5a00}
+
+/* DRIVE */
+.drive-box{background:#fff;border:1px solid var(--border);border-radius:16px;padding:2.3rem;text-align:center;box-shadow:var(--sh);margin-bottom:1.1rem}
+.drive-ico{font-size:2.8rem;margin-bottom:.9rem}
+.drive-box h3{font-size:1rem;font-weight:700;color:var(--navy);margin-bottom:.4rem}
+.drive-box p{font-size:.81rem;color:var(--muted);line-height:1.65;margin-bottom:1.3rem}
+.no-link{background:var(--off);border:1.5px dashed var(--border);border-radius:10px;padding:1.1rem;font-size:.78rem;color:var(--muted)}
+.btn-drive{background:linear-gradient(135deg,#1a73e8 0%,#0d5cbf 100%);color:#fff;padding:.75rem 1.8rem;font-size:.88rem;border-radius:10px;border:none;font-family:'Lexend',sans-serif;font-weight:600;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:.55rem}
+.btn-drive:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(26,115,232,.35)}
+
+/* IMPOSTAZIONI */
+.stt-h{font-size:.86rem;font-weight:700;color:var(--navy);margin-bottom:.9rem;padding-bottom:.45rem;border-bottom:1px solid var(--border)}
+.ir{display:flex;justify-content:space-between;align-items:center;padding:.65rem 0;border-bottom:1px solid var(--border);font-size:.81rem}
+.ir:last-child{border-bottom:none}
+.il{color:var(--muted);font-size:.76rem}.iv{font-weight:500;color:var(--text)}
+.gdpr-box{background:rgba(255,200,0,.07);border:1px solid rgba(255,180,0,.3);border-radius:10px;padding:1rem 1.1rem;font-size:.76rem;color:#6b4c00;line-height:1.7;margin-top:1rem}
+.gdpr-box strong{color:var(--navy)}
+
+/* BUTTONS */
+.btn{padding:.58rem 1rem;border-radius:8px;font-family:'Lexend',sans-serif;font-size:.78rem;font-weight:600;cursor:pointer;border:none;transition:all .16s;display:inline-flex;align-items:center;gap:.38rem}
+.btn-p{background:var(--sky);color:var(--navy-dark)}.btn-p:hover{background:#00d4ff;transform:translateY(-1px)}
+.btn-g{background:var(--off);color:var(--text);border:1px solid var(--border)}.btn-g:hover{background:var(--border)}
+.btn-d{background:rgba(224,82,82,.1);color:var(--danger);border:1px solid rgba(224,82,82,.2)}.btn-d:hover{background:rgba(224,82,82,.18)}
+.btn-sm{padding:.32rem .65rem;font-size:.7rem}
+
+/* TOAST */
+.tc{position:fixed;bottom:1.4rem;right:1.4rem;z-index:9999;display:flex;flex-direction:column;gap:.45rem}
+.toast{background:var(--navy-dark);color:#fff;padding:.7rem 1rem;border-radius:10px;font-size:.76rem;font-weight:500;border-left:3px solid var(--sky);box-shadow:var(--sh-lg);animation:ti .25s ease;max-width:280px}
+.toast.s{border-left-color:var(--success)}.toast.e{border-left-color:var(--danger)}
+@keyframes ti{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+@media(max-width:768px){.kgrid{grid-template-columns:1fr}.fg2{grid-template-columns:1fr}.sidebar{display:none}}
+</style>
+</head>
+<body>
+
+<div id="loader">
+  <div class="brand">RCB <em>Academy</em></div>
+  <div class="spin"></div>
+  <small>Caricamento dashboard...</small>
+</div>
+
+<div class="tc" id="tc"></div>
+
+<!-- ══════════ LOGIN ══════════ -->
+<div class="screen" id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="brand">RCB <em>Academy</em></div>
+      <sub>Area Riservata Tutor</sub>
+    </div>
+    <div class="login-h">Accedi alla dashboard</div>
+    <div class="login-s">Usa le credenziali fornite da RCB Academy</div>
+    <div class="login-err" id="loginErr"></div>
+    <div class="lf">
+      <label>Email</label>
+      <input type="email" id="lEmail" placeholder="tutor@email.com" autocomplete="email">
+    </div>
+    <div class="lf">
+      <label>Password</label>
+      <input type="password" id="lPass" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="btn-login" id="loginBtn" onclick="doLogin()">Accedi</button>
+    <div class="login-foot">Problemi di accesso? Scrivi a admin@rcbacademy.com</div>
+  </div>
+</div>
+
+<!-- ══════════ DASHBOARD ══════════ -->
+<div class="screen" id="dashScreen">
+
+  <aside class="sidebar">
+    <div class="sb-top">
+      <div class="sb-brand">RCB <em>Academy</em></div>
+      <div class="sb-role">Area Tutor</div>
+    </div>
+    <div class="sb-prof">
+      <div class="sb-av" id="sbAv">T</div>
+      <div>
+        <div class="sb-pn" id="sbName">Tutor</div>
+        <div class="sb-pe" id="sbEmail">—</div>
+      </div>
+    </div>
+    <nav class="sb-nav">
+      <div class="sb-sec">Menu</div>
+      <div class="ni active" onclick="sw('home',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Dashboard
+      </div>
+      <div class="ni" onclick="sw('registro',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Registro Ore
+      </div>
+      <div class="ni" onclick="sw('materiali',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+        Materiali
+      </div>
+      <div class="sb-sec" style="margin-top:.4rem">Account</div>
+      <div class="ni" onclick="sw('impostazioni',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        Impostazioni
+      </div>
+    </nav>
+    <div class="sb-foot">
+      <button class="btn-out" onclick="doLogout()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Esci dalla dashboard
+      </button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="topbar-ttl" id="tTitle">Dashboard</div>
+      <div class="topbar-date" id="tDate"></div>
+    </div>
+    <div class="content">
+
+      <!-- HOME -->
+      <div class="view active" id="view-home">
+        <div class="wcard">
+          <div class="wg">Bentornato/a,</div>
+          <div class="wn">👋 <em id="wName">Tutor</em></div>
+          <div class="wm" id="wMeta">Sessione attiva — RCB Academy</div>
+        </div>
+        <div class="kgrid">
+          <div class="kcard"><div class="kico b">⏱️</div><div><div class="kv" id="kOre">0h</div><div class="kl">Ore totali</div></div></div>
+          <div class="kcard"><div class="kico g">👤</div><div><div class="kv" id="kStu">0</div><div class="kl">Studenti seguiti</div></div></div>
+          <div class="kcard"><div class="kico a">📋</div><div><div class="kv" id="kLez">0</div><div class="kl">Lezioni registrate</div></div></div>
+        </div>
+        <div class="card">
+          <div class="card-ttl">Ultime lezioni</div>
+          <div id="homeUlt"><div class="empty"><div class="big">📋</div>Nessuna lezione registrata.</div></div>
+        </div>
+      </div>
+
+      <!-- REGISTRO ORE -->
+      <div class="view" id="view-registro">
+        <div class="rh">
+          <div><div class="pg-ttl">Registro Ore</div><div class="pg-sub">Registra e gestisci le lezioni svolte</div></div>
+          <button class="btn btn-p" onclick="toggleForm()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Aggiungi lezione
+          </button>
+        </div>
+        <div class="ore-tot"><div><div class="lbl">ORE TOTALI REGISTRATE</div><div class="val" id="totOre">0h</div></div><div style="font-size:1.8rem;opacity:.45">⏱️</div></div>
+
+        <div class="add-form" id="addForm">
+          <div style="font-size:.84rem;font-weight:700;color:var(--navy);margin-bottom:.9rem" id="fmTitle">➕ Nuova lezione</div>
+          <div class="fg2">
+            <div class="fg"><label>Data *</label><input type="date" id="fData"></div>
+            <div class="fg">
+              <label>Nome studente * <span style="font-weight:400;text-transform:none;font-size:.65rem">(solo il nome/pseudonimo)</span></label>
+              <div class="stu-wrap">
+                <input type="text" id="fStu" placeholder="es. Marco" autocomplete="off"
+                  oninput="onStuInput()" onfocus="onStuInput()" onblur="hideSugDelay()">
+                <div class="stu-suggestions" id="stuSug"></div>
+              </div>
+              <div class="field-hint" id="stuHint">Scrivi solo il nome. Il sistema assegnerà un ID univoco per distinguere studenti omonimi.</div>
+              <span class="preview-badge" id="stuPreview"></span>
+            </div>
+            <div class="fg"><label>Materia *</label><input type="text" id="fMat" placeholder="Matematica"></div>
+            <div class="fg"><label>Ore svolte *</label><input type="number" id="fOre" min="0.5" max="8" step="0.5" placeholder="1.5"></div>
+          </div>
+          <div class="fg"><label>Note</label><textarea id="fNote" placeholder="Argomenti trattati, progressi..."></textarea></div>
+          <div class="fa">
+            <button class="btn btn-p" id="saveBtn" onclick="salva()">Salva lezione</button>
+            <button class="btn btn-g" onclick="toggleForm(false)">Annulla</button>
+          </div>
+        </div>
+
+        <div class="tw">
+          <table>
+            <thead><tr><th>Data</th><th>Studente</th><th>Materia</th><th>Ore</th><th>Note</th><th></th></tr></thead>
+            <tbody id="regBody"><tr><td colspan="6"><div class="empty"><div class="big">📋</div>Nessuna lezione. Clicca "+ Aggiungi lezione".</div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- MATERIALI -->
+      <div class="view" id="view-materiali">
+        <div class="rh"><div><div class="pg-ttl">Materiali</div><div class="pg-sub">Accedi alla tua cartella Google Drive condivisa</div></div></div>
+        <div class="drive-box">
+          <div class="drive-ico">📁</div>
+          <h3>Cartella materiali RCB Academy</h3>
+          <p>RCB Academy gestisce i materiali didattici su <strong>Google Drive</strong>.<br>L'amministratore ha creato e condiviso con te una cartella dedicata.</p>
+          <div id="driveArea"><div class="no-link">⏳ Cartella Drive non ancora assegnata.<br>Contatta: <strong>admin@rcbacademy.com</strong></div></div>
+        </div>
+        <div class="card">
+          <div class="card-ttl">Come funziona</div>
+          <div style="font-size:.8rem;color:var(--muted);line-height:1.85">
+            <p>📌 <strong>RCB Academy</strong> crea e gestisce le cartelle Drive per ogni tutor.</p>
+            <p style="margin-top:.4rem">📤 <strong>Upload:</strong> carica file direttamente nella cartella Drive condivisa.</p>
+            <p style="margin-top:.4rem">🔒 <strong>Sicurezza:</strong> le cartelle sono di proprietà dell'account RCB Academy — controllo centralizzato garantito.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- IMPOSTAZIONI -->
+      <div class="view" id="view-impostazioni">
+        <div class="rh"><div><div class="pg-ttl">Impostazioni</div><div class="pg-sub">Profilo e impostazioni account</div></div></div>
+        <div class="card">
+          <div style="margin-bottom:1.3rem">
+            <div class="stt-h">Profilo tutor</div>
+            <div class="ir"><span class="il">Email account</span><span class="iv" id="sEmail">—</span></div>
+            <div class="ir"><span class="il">Nome</span><span class="iv" id="sNome">—</span></div>
+            <div class="ir"><span class="il">Ruolo</span><span class="iv">Tutor RCB Academy</span></div>
+            <div class="ir"><span class="il">Stato</span><span class="iv" style="color:var(--success)">✅ Attivo</span></div>
+          </div>
+          <div>
+            <div class="stt-h">Cambia password</div>
+            <div class="fg"><label>Nuova password</label><input type="password" id="nPass" placeholder="Almeno 8 caratteri"></div>
+            <div class="fg"><label>Conferma password</label><input type="password" id="nPassC" placeholder="Ripeti la password"></div>
+            <button class="btn btn-p" onclick="cambiaPass()">Aggiorna password</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="stt-h">Privacy, GDPR e protezione dati</div>
+          <div style="font-size:.78rem;color:var(--muted);line-height:1.7">
+            Tutti i dati sono trattati da <strong>PT AITELOR RCB GLOBAL</strong> nel rispetto del GDPR (Reg. UE 2016/679), del D.Lgs. 196/2003 e della Legge indonesiana n. 27/2022 (PDP).<br>
+            Per richieste privacy: admin@rcbacademy.com
+          </div>
+          <div class="gdpr-box">
+            <strong>⚠️ Informativa trasferimenti extra-UE (Art. 13 GDPR)</strong><br>
+            I dati inseriti in questa dashboard sono archiviati su <strong>Firebase/Firestore (Google LLC, USA)</strong> — trasferimento garantito da Clausole Contrattuali Standard (SCC) e certificazione EU-US Data Privacy Framework.<br>
+            La dashboard è ospitata su <strong>GitHub Pages (Microsoft Corp., USA)</strong> — nessun dato personale archiviato su GitHub.<br>
+            Il Titolare del trattamento (PT AITELOR RCB GLOBAL) ha sede in <strong>Indonesia</strong>, paese privo di decisione di adeguatezza UE. I trasferimenti verso la sede sono regolati da SCC.<br><br>
+            <strong>🛡️ Tutela minorenni UE:</strong> il sistema tratta dati pseudonimizzati degli studenti (solo nome + numero progressivo). Non inserire mai cognomi, email o altri dati identificativi degli studenti nel registro ore. In caso di dubbi, contatta admin@rcbacademy.com.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════
+   ⚙️  CONFIGURAZIONE FIREBASE — sostituisci con i tuoi valori
+   Firebase Console → Impostazioni progetto → Le tue app → Web
+══════════════════════════════════════════════════════ */
+const firebaseConfig = {
+ apiKey: "AIzaSyBZalQI1yII4YdBFUUB1CCV8Ool9NFPFu4",
+  authDomain: "rcb-academy.firebaseapp.com",
+  projectId: "rcb-academy",
+  storageBucket: "rcb-academy.firebasestorage.app",
+  messagingSenderId: "422642546033",
+  appId: "1:422642546033:web:41cd1217ef89d9de3f72d0"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db   = firebase.firestore();
+
+let me      = null;
+let profilo = null;
+let cache   = [];
+let editId  = null;
+let myStudents = [];  // nomi studenti già usati da questo tutor
+
+const VTITLES = { home:'Dashboard', registro:'Registro Ore', materiali:'Materiali', impostazioni:'Impostazioni' };
+
+/* ══════════════════════════════════════════════════════
+   AUTH
+══════════════════════════════════════════════════════ */
+auth.onAuthStateChanged(async u => {
+  document.getElementById('loader').style.display = 'none';
+  if (u) {
+    me = u;
+    await loadProfilo(u);
+    show('dashScreen');
+    aggData();
+    await loadLezioni();
+  } else {
+    me = null; profilo = null; cache = []; myStudents = [];
+    show('loginScreen');
+  }
+});
+
+async function doLogin() {
+  const email = document.getElementById('lEmail').value.trim();
+  const pass  = document.getElementById('lPass').value;
+  const btn   = document.getElementById('loginBtn');
+  const err   = document.getElementById('loginErr');
+  err.style.display = 'none';
+  if (!email || !pass) { showErr(err,'Inserisci email e password.'); return; }
+  btn.disabled = true; btn.textContent = 'Accesso…';
+  try {
+    await auth.signInWithEmailAndPassword(email, pass);
+  } catch(e) {
+    btn.disabled = false; btn.textContent = 'Accedi';
+    const m = {
+      'auth/user-not-found':    'Nessun account trovato con questa email.',
+      'auth/wrong-password':    'Password non corretta.',
+      'auth/invalid-email':     'Email non valida.',
+      'auth/too-many-requests': 'Troppi tentativi. Attendi qualche minuto.',
+      'auth/user-disabled':     'Account disabilitato. Contatta l\'amministratore.',
+      'auth/invalid-credential':'Credenziali non valide. Controlla email e password.'
+    };
+    showErr(err, m[e.code] || 'Errore di accesso. Riprova.');
+  }
+}
+
+async function doLogout() { await auth.signOut(); toast('Logout effettuato.'); }
+
+/* ══════════════════════════════════════════════════════
+   PROFILO
+══════════════════════════════════════════════════════ */
+async function loadProfilo(u) {
+  try {
+    const ref  = db.collection('tutors').doc(u.uid);
+    const snap = await ref.get();
+    if (!snap.exists) {
+      const p = { email: u.email, nome: nomeDaEmail(u.email), ruolo:'tutor', driveFolder:null, createdAt: firebase.firestore.FieldValue.serverTimestamp() };
+      await ref.set(p); profilo = p;
+    } else { profilo = snap.data(); }
+    updateUI(u, profilo);
+  } catch(e) { console.error('[RCB] Profilo:', e); }
+}
+
+function updateUI(u, p) {
+  const nome = p?.nome || nomeDaEmail(u.email);
+  const av   = nome.charAt(0).toUpperCase();
+  document.getElementById('sbAv').textContent    = av;
+  document.getElementById('sbName').textContent  = nome;
+  document.getElementById('sbEmail').textContent = u.email;
+  document.getElementById('wName').textContent   = nome;
+  document.getElementById('wMeta').textContent   = 'Sessione attiva — ' + u.email;
+  document.getElementById('sEmail').textContent  = u.email;
+  document.getElementById('sNome').textContent   = nome;
+  const da = document.getElementById('driveArea');
+  if (p?.driveFolder) {
+    da.innerHTML = `<button class="btn-drive" onclick="window.open('${p.driveFolder}','_blank')">
+      <svg width="18" height="18" viewBox="0 0 87.3 78" fill="currentColor"><path d="M6.6 66.85l3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8H0c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/><path d="M43.65 25L29.9 1.2C28.55 2 27.4 3.1 26.6 4.5L1.2 48.5A9.06 9.06 0 000 53h27.45z" fill="#00ac47"/><path d="M73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5H59.85l5.4 10.4z" fill="#ea4335"/><path d="M43.65 25L57.4 1.2C56.05.45 54.5 0 52.85 0H34.45c-1.65 0-3.2.45-4.55 1.2z" fill="#00832d"/><path d="M59.85 53H27.45L13.7 76.8c1.35.75 2.9 1.2 4.55 1.2h50.8c1.65 0 3.2-.45 4.55-1.2z" fill="#2684fc"/><path d="M73.4 26.5l-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3L43.65 25 59.85 53h27.4c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/></svg>
+      Apri cartella Google Drive</button>
+      <p style="font-size:.7rem;color:var(--muted);margin-top:.7rem">Si apre in una nuova scheda.</p>`;
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   CAMBIO PASSWORD
+══════════════════════════════════════════════════════ */
+async function cambiaPass() {
+  const np = document.getElementById('nPass').value;
+  const nc = document.getElementById('nPassC').value;
+  if (!np || np.length < 8) { toast('La password deve essere di almeno 8 caratteri.','e'); return; }
+  if (np !== nc)            { toast('Le password non coincidono.','e'); return; }
+  try {
+    await me.updatePassword(np);
+    document.getElementById('nPass').value = '';
+    document.getElementById('nPassC').value = '';
+    toast('Password aggiornata ✅','s');
+  } catch(e) {
+    if (e.code === 'auth/requires-recent-login') toast('Per sicurezza, esci e rientra prima di cambiare la password.','e');
+    else toast('Errore aggiornamento password.','e');
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   CARICA LEZIONI
+══════════════════════════════════════════════════════ */
+async function loadLezioni() {
+  if (!me) return;
+  try {
+    const snap = await db.collection('registro_ore')
+      .where('tutorID','==',me.uid)
+      .orderBy('data','desc')
+      .get();
+    cache = snap.docs.map(d => ({id:d.id,...d.data()}));
+    // Estrai lista studenti unici di questo tutor
+    const stuSet = new Set(cache.map(l => l.nomeStudente).filter(Boolean));
+    myStudents = Array.from(stuSet).sort();
+    renderTabella();
+    renderKPI();
+  } catch(e) {
+    console.error('[RCB] Lezioni:', e);
+    if (e.code === 'failed-precondition') toast('⚠️ Crea l\'indice Firestore (vedi console).','e');
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   RENDER TABELLA
+══════════════════════════════════════════════════════ */
+function renderTabella() {
+  const b = document.getElementById('regBody');
+  if (!cache.length) {
+    b.innerHTML = `<tr><td colspan="6"><div class="empty"><div class="big">📋</div>Nessuna lezione. Clicca "+ Aggiungi lezione".</div></td></tr>`;
+    return;
+  }
+  b.innerHTML = cache.map(l => `
+    <tr>
+      <td>${fd(l.data)}</td>
+      <td><span class="stu-badge">${x(l.nomeStudente)}</span></td>
+      <td><span class="badge">${x(l.materia)}</span></td>
+      <td class="td-h">${l.ore}h</td>
+      <td style="color:var(--muted);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${x(l.note||'—')}</td>
+      <td><div class="tda">
+        <button class="btn btn-g btn-sm" onclick="modifica('${l.id}')">✏️</button>
+        <button class="btn btn-d btn-sm" onclick="elimina('${l.id}')">🗑️</button>
+      </div></td>
+    </tr>`).join('');
+}
+
+/* ══════════════════════════════════════════════════════
+   KPI
+══════════════════════════════════════════════════════ */
+function renderKPI() {
+  const tot  = cache.reduce((s,l) => s + (parseFloat(l.ore)||0), 0);
+  const stus = new Set(cache.map(l => l.nomeStudente));
+  document.getElementById('kOre').textContent  = tot + 'h';
+  document.getElementById('kStu').textContent  = stus.size;
+  document.getElementById('kLez').textContent  = cache.length;
+  document.getElementById('totOre').textContent = tot + 'h';
+  const ul  = document.getElementById('homeUlt');
+  const top = cache.slice(0,3);
+  if (!top.length) {
+    ul.innerHTML = `<div class="empty"><div class="big">📋</div>Nessuna lezione registrata.</div>`;
+    return;
+  }
+  ul.innerHTML = top.map(l => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:.6rem 0;border-bottom:1px solid var(--border)">
+      <div>
+        <div style="font-size:.82rem;font-weight:500"><span class="stu-badge">${x(l.nomeStudente)}</span> — <span class="badge">${x(l.materia)}</span></div>
+        <div style="font-size:.7rem;color:var(--muted)">${fd(l.data)}</div>
+      </div>
+      <div style="font-size:.95rem;font-weight:700;color:var(--sky)">${l.ore}h</div>
+    </div>`).join('');
+}
+
+/* ══════════════════════════════════════════════════════
+   STUDENT AUTOCOMPLETE + GLOBAL NUMBERING
+══════════════════════════════════════════════════════ */
+function onStuInput() {
+  const val   = document.getElementById('fStu').value.trim();
+  const sug   = document.getElementById('stuSug');
+  const prev  = document.getElementById('stuPreview');
+  const hint  = document.getElementById('stuHint');
+
+  if (!val) { sug.style.display='none'; prev.style.display='none'; return; }
+
+  // Filtra studenti esistenti di questo tutor
+  const lower  = val.toLowerCase();
+  const matches = myStudents.filter(s => s.toLowerCase().startsWith(lower));
+
+  if (matches.length) {
+    sug.innerHTML = matches.map(m =>
+      `<div class="stu-sug-item" onmousedown="selectStudent('${x(m)}')">${x(m)}</div>`
+    ).join('');
+    // Aggiungi opzione "Nuovo studente" se l'input non è già un nome esistente
+    const isExact = matches.some(m => m.toLowerCase() === lower);
+    if (!isExact && !val.includes('#')) {
+      sug.innerHTML += `<div class="stu-sug-item stu-sug-new" onmousedown="previewNewStudent('${x(val)}')">➕ Nuovo studente: <strong>${x(val)}</strong></div>`;
+    }
+    sug.style.display = 'block';
+  } else {
+    sug.style.display = 'none';
+  }
+
+  // Se contiene già '#' è uno studente esistente selezionato
+  if (val.includes('#')) {
+    prev.textContent  = '✓ Studente esistente';
+    prev.style.display = 'inline-block';
+    prev.style.background = 'rgba(34,200,138,.12)';
+    prev.style.color = '#167a5a';
+    hint.textContent = 'Studente già registrato nel tuo registro.';
+  } else {
+    prev.style.display = 'none';
+    hint.textContent = 'Scrivi solo il nome. Il sistema assegnerà un ID univoco per distinguere studenti omonimi.';
+  }
+}
+
+function selectStudent(name) {
+  document.getElementById('fStu').value = name;
+  document.getElementById('stuSug').style.display = 'none';
+  onStuInput();
+}
+
+async function previewNewStudent(rawName) {
+  document.getElementById('stuSug').style.display = 'none';
+  const normalized = rawName.trim().toLowerCase().replace(/\s+/g,'');
+  const prev = document.getElementById('stuPreview');
+  prev.textContent = '⏳ Verifica...';
+  prev.style.display = 'inline-block';
+  prev.style.background = 'var(--sky-dim)';
+  prev.style.color = '#006a99';
+  try {
+    const regSnap = await db.collection('student_registry').doc(normalized).get();
+    const nextNum = regSnap.exists ? regSnap.data().count + 1 : 1;
+    const previewName = `${rawName.trim()} #${nextNum}`;
+    prev.textContent = `→ Verrà salvato come: ${previewName}`;
+    document.getElementById('stuHint').textContent = `Questo sarà il nome univoco assegnato.`;
+  } catch(e) {
+    prev.textContent = '→ Nuovo studente';
+  }
+}
+
+function hideSugDelay() { setTimeout(()=>{ document.getElementById('stuSug').style.display='none'; }, 200); }
+
+/* Risolve il nome studente: se ha già '#' lo usa com'è,
+   altrimenti crea un nuovo ID globale con transazione Firestore */
+async function resolveStudentName(rawInput) {
+  const val = rawInput.trim();
+  if (val.includes('#')) return val;  // già risolto (studente esistente)
+
+  const normalized = val.toLowerCase().replace(/\s+/g,'');
+  const registryRef = db.collection('student_registry').doc(normalized);
+
+  return db.runTransaction(async (t) => {
+    const doc = await t.get(registryRef);
+    const newCount = doc.exists ? doc.data().count + 1 : 1;
+    t.set(registryRef, { count: newCount }, { merge: true });
+    return `${val} #${newCount}`;
+  });
+}
+
+/* ══════════════════════════════════════════════════════
+   FORM TOGGLE / RESET
+══════════════════════════════════════════════════════ */
+function toggleForm(apri) {
+  const f    = document.getElementById('addForm');
+  const open = apri !== undefined ? apri : !f.classList.contains('open');
+  if (open) {
+    f.classList.add('open');
+    if (!editId) document.getElementById('fData').value = new Date().toISOString().split('T')[0];
+  } else {
+    f.classList.remove('open');
+    resetForm();
+  }
+}
+
+function resetForm() {
+  ['fData','fStu','fMat','fOre','fNote'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('stuSug').style.display  = 'none';
+  document.getElementById('stuPreview').style.display = 'none';
+  document.getElementById('stuHint').textContent = 'Scrivi solo il nome. Il sistema assegnerà un ID univoco per distinguere studenti omonimi.';
+  editId = null;
+  document.getElementById('fmTitle').textContent = '➕ Nuova lezione';
+  document.getElementById('saveBtn').textContent  = 'Salva lezione';
+}
+
+/* ══════════════════════════════════════════════════════
+   SALVA
+══════════════════════════════════════════════════════ */
+async function salva() {
+  const data  = document.getElementById('fData').value;
+  const stuRaw= document.getElementById('fStu').value.trim();
+  const mat   = document.getElementById('fMat').value.trim();
+  const ore   = parseFloat(document.getElementById('fOre').value);
+  const note  = document.getElementById('fNote').value.trim();
+
+  if (!data)         { toast('Inserisci la data.','e'); return; }
+  if (!stuRaw)       { toast('Inserisci il nome dello studente.','e'); return; }
+  if (!mat)          { toast('Inserisci la materia.','e'); return; }
+  if (!ore || ore<=0){ toast('Inserisci le ore svolte.','e'); return; }
+
+  const btn = document.getElementById('saveBtn');
+  btn.disabled = true; btn.textContent = 'Elaborazione…';
+
+  try {
+    // Risolvi il nome studente (assegna ID globale se nuovo)
+    const nomeStudente = editId
+      ? stuRaw   // in modifica conserva il nome già assegnato
+      : await resolveStudentName(stuRaw);
+
+    const rec = {
+      tutorID: me.uid,
+      nomeStudente,
+      data, ore, materia: mat,
+      note: note||null,
+      aggiornatoAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    if (editId) {
+      await db.collection('registro_ore').doc(editId).update(rec);
+      toast('Lezione aggiornata ✅','s');
+    } else {
+      rec.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+      await db.collection('registro_ore').add(rec);
+      toast(`Lezione salvata — studente: ${nomeStudente} ✅`,'s');
+    }
+    toggleForm(false);
+    await loadLezioni();
+  } catch(e) {
+    console.error('[RCB] Salvataggio:', e);
+    toast('Errore nel salvataggio. Riprova.','e');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = editId ? 'Aggiorna lezione' : 'Salva lezione';
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   MODIFICA / ELIMINA
+══════════════════════════════════════════════════════ */
+function modifica(id) {
+  const l = cache.find(c => c.id === id);
+  if (!l) return;
+  editId = id;
+  document.getElementById('fData').value = l.data;
+  document.getElementById('fStu').value  = l.nomeStudente;
+  document.getElementById('fMat').value  = l.materia;
+  document.getElementById('fOre').value  = l.ore;
+  document.getElementById('fNote').value = l.note||'';
+  const prev = document.getElementById('stuPreview');
+  prev.textContent = '✓ Modifica lezione esistente';
+  prev.style.display = 'inline-block';
+  prev.style.background = 'rgba(34,200,138,.12)';
+  prev.style.color = '#167a5a';
+  document.getElementById('fmTitle').textContent = '✏️ Modifica lezione';
+  document.getElementById('saveBtn').textContent  = 'Aggiorna lezione';
+  toggleForm(true);
+  document.getElementById('addForm').scrollIntoView({behavior:'smooth'});
+}
+
+async function elimina(id) {
+  if (!confirm('Eliminare questa lezione? L\'operazione non è reversibile.')) return;
+  try {
+    await db.collection('registro_ore').doc(id).delete();
+    toast('Lezione eliminata.','s');
+    await loadLezioni();
+  } catch(e) { toast('Errore eliminazione.','e'); }
+}
+
+/* ══════════════════════════════════════════════════════
+   NAVIGAZIONE
+══════════════════════════════════════════════════════ */
+function sw(id, el) {
+  document.querySelectorAll('.ni').forEach(n => n.classList.remove('active'));
+  if(el) el.classList.add('active');
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-'+id).classList.add('active');
+  document.getElementById('tTitle').textContent = VTITLES[id]||'';
+}
+
+/* ══════════════════════════════════════════════════════
+   UTILS
+══════════════════════════════════════════════════════ */
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function aggData() {
+  document.getElementById('tDate').textContent =
+    new Date().toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+}
+function toast(msg, type='i') {
+  const t = document.createElement('div');
+  t.className = 'toast '+(type==='s'?'s':type==='e'?'e':'');
+  t.textContent = msg;
+  document.getElementById('tc').appendChild(t);
+  setTimeout(()=>t.remove(), 3800);
+}
+function showErr(el, msg) { el.textContent = msg; el.style.display = 'block'; }
+function fd(d) { if(!d)return'—'; const[y,m,g]=d.split('-'); return `${g}/${m}/${y}`; }
+function nomeDaEmail(e) { return e.split('@')[0].replace(/[._]/g,' ').replace(/\b\w/g,c=>c.toUpperCase()); }
+function x(s) { if(!s)return''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+document.getElementById('lEmail').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('lPass').focus()});
+document.getElementById('lPass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
+</script>
+
+<!--
+═══════════════════════════════════════════════════════════════════════
+ 🔐  FIRESTORE SECURITY RULES — copia in Firebase → Firestore → Regole
+═══════════════════════════════════════════════════════════════════════
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /tutors/{tutorId} {
+      allow read, write: if request.auth != null
+                         && request.auth.uid == tutorId;
+    }
+
+    match /registro_ore/{recId} {
+      allow read, update, delete: if request.auth != null
+        && request.auth.uid == resource.data.tutorID;
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.tutorID;
+    }
+
+    // Registro globale nomi studenti (pseudonimizzati)
+    // Tutti i tutor autenticati possono leggere e incrementare di 1
+    match /student_registry/{nameId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.count == 1
+        && request.resource.data.keys().hasOnly(['count']);
+      allow update: if request.auth != null
+        && request.resource.data.count == resource.data.count + 1
+        && request.resource.data.keys().hasOnly(['count']);
+    }
+
+    match /{doc=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
+═══════════════════════════════════════════════════════════════════════
+ 📊  FIRESTORE — INDICI NECESSARI
+═══════════════════════════════════════════════════════════════════════
+
+ registro_ore:
+   tutorID (Ascending) + data (Descending) — indice composito
+
+ student_registry:
+   Nessun indice composto necessario (query semplici per docId)
+
+═══════════════════════════════════════════════════════════════════════
+ 📋  STRUTTURA FIRESTORE
+═══════════════════════════════════════════════════════════════════════
+
+tutors/{uid}
+  email:        "tutor@email.com"
+  nome:         "Mario Rossi"
+  ruolo:        "tutor"
+  driveFolder:  "https://drive.google.com/drive/folders/XXXXX"
+  createdAt:    Timestamp
+
+registro_ore/{docId}
+  tutorID:       "firebase-uid-tutor"
+  nomeStudente:  "Marco #1"        ← solo nome + numero globale, mai cognome/email
+  data:          "2026-03-15"
+  ore:           1.5
+  materia:       "Matematica"
+  note:          "Equazioni di secondo grado"
+  createdAt:     Timestamp
+  aggiornatoAt:  Timestamp
+
+student_registry/{normalizedName}    ← es. "marco", "sofia", "luca"
+  count:  3                          ← contatore globale cross-tutor
+-->
+</body>
+</html>
