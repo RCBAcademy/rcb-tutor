@@ -529,7 +529,7 @@ tr:hover td{background:var(--off)}
    Firebase Console → Impostazioni progetto → Le tue app → Web
 ══════════════════════════════════════════════════════ */
 const firebaseConfig = {
- apiKey: "AIzaSyBZalQI1yII4YdBFUUB1CCV8Ool9NFPFu4",
+apiKey: "AIzaSyBZalQI1yII4YdBFUUB1CCV8Ool9NFPFu4",
   authDomain: "rcb-academy.firebaseapp.com",
   projectId: "rcb-academy",
   storageBucket: "rcb-academy.firebasestorage.app",
@@ -1022,27 +1022,37 @@ function renderSchema(){
   let html='<table class="cal-table"><thead><tr><th style="width:48px"></th>';
   DAYS_IT.forEach(d=>{ html+='<th class="cal-day-head">'+d+'</th>'; });
   html+='</tr></thead><tbody>';
-  SLOTS.forEach(slot=>{
+  SLOTS.forEach(function(slot){
     const isHour = slot.endsWith(':00');
     html+='<tr>';
     html+='<td class="cal-time-label" style="'+(isHour?'font-weight:600;color:var(--text)':'')+'">'+slot+'</td>';
-    for(let d=0;d<7;d++){
+    for(var d=0;d<7;d++){
       const avail=(calData.availability[d]||[]).includes(slot);
-      html+='<td class="cal-cell '+(avail?'cal-avail':'')+'" onclick="toggleSchema('+d+',''+slot+'')" data-day="'+d+'" data-slot="'+slot+'"></td>';
+      html+='<td class="cal-cell '+(avail?'cal-avail ':'')+'" data-day="'+d+'" data-slot="'+slot+'"></td>';
     }
     html+='</tr>';
   });
   html+='</tbody></table>';
   grid.innerHTML=html;
+  // Attach click via delegation — avoids all quote-nesting issues
+  grid.onclick = function(e){
+    const td = e.target.closest('td.cal-cell');
+    if(!td) return;
+    const day  = parseInt(td.dataset.day);
+    const slot = td.dataset.slot;
+    if(isNaN(day)||!slot) return;
+    toggleSchema(day, slot, td);
+  };
 }
 
-function toggleSchema(day,slot){
+function toggleSchema(day,slot,tdEl){
   if(!calData.availability[day]) calData.availability[day]=[];
   const arr=calData.availability[day];
   const idx=arr.indexOf(slot);
   if(idx>-1) arr.splice(idx,1); else arr.push(slot);
-  document.querySelectorAll('[data-day="'+day+'"][data-slot="'+slot+'"]')
-    .forEach(el=>el.classList.toggle('cal-avail'));
+  // Update all matching cells (schema grid only)
+  document.querySelectorAll('#schemaGrid [data-day="'+day+'"][data-slot="'+slot+'"]')
+    .forEach(function(el){ el.classList.toggle('cal-avail'); });
 }
 
 async function saveSchema(){
@@ -1088,14 +1098,268 @@ function renderWeek(){
       let cls='cal-cell';
       let content='';
       let onclick='';
+      let bId='', dtStr='', dIdx=d, sSlot=slot, dtFull=dateStr;
       if(isPast){ cls+=' cal-past'; }
-      else if(booking){ cls+=' cal-booked'; content='<span class="cal-booking-chip">'+x(booking.studentName)+'</span>'; onclick="showBookingInfo('"+booking.id+"')"; }
-      else if(isAvail){ cls+=' cal-avail'; onclick="toggleException('"+dateStr+"',"+d+",'"+slot+"',false)"; }
-      else { onclick="toggleException('"+dateStr+"',"+d+",'"+slot+"',true)"; }
-      html+='<td class="'+cls+'" onclick="'+onclick+'">'+content+'</td>';
+      else if(booking){ cls+=' cal-booked'; content='<span class="cal-booking-chip">'+x(booking.studentName)+'</span>'; bId=booking.id; }
+      else if(isAvail){ cls+=' cal-avail'; }
+      html+='<td class="'+cls+'"'
+        +(bId?' data-bid="'+bId+'"':'')
+        +' data-date="'+dateStr+'" data-day="'+d+'" data-slot="'+slot+'" data-avail="'+(isAvail?1:0)+'" data-past="'+(isPast?1:0)+'">'+content+'</td>';
     }
     html+='</tr>';
   });
+  html+='</tbody></table>';
+  grid.innerHTML=html;
+  // Event delegation — no inline onclick needed
+  grid.onclick = function(e){
+    const td = e.target.closest('td');
+    if(!td) return;
+    if(td.dataset.past==='1') return;
+    const bid   = td.dataset.bid;
+    const date  = td.dataset.date;
+    const day   = parseInt(td.dataset.day);
+    const slot  = td.dataset.slot;
+    const avail = td.dataset.avail==='1';
+    if(!date||!slot) return;
+    if(bid){ showBookingInfo(bid); return; }
+    toggleException(date, day, slot, !avail);
+  };
+}
+
+async function toggleException(dateStr,dayIdx,slot,isAddingExtra){
+  if(!calData.exceptions) calData.exceptions={};
+  const exc=calData.exceptions[dateStr]||{blocked:[],extra:[]};
+  if(!exc.blocked) exc.blocked=[];
+  if(!exc.extra)   exc.extra=[];
+  const inTpl=(calData.availability[dayIdx]||[]).includes(slot);
+  if(inTpl){
+    const i=exc.blocked.indexOf(slot);
+    if(i>-1){ exc.blocked.splice(i,1); toast('Slot ripristinato per '+dateStr,'s'); }
+    else { exc.blocked.push(slot); toast('Slot bloccato per '+dateStr,'s'); }
+  } else {
+    const i=exc.extra.indexOf(slot);
+    if(i>-1){ exc.extra.splice(i,1); toast('Slot extra rimosso.','s'); }
+    else { exc.extra.push(slot); toast('Slot extra aggiunto per '+dateStr,'s'); }
+  }
+  calData.exceptions[dateStr]=exc;
+  try {
+    const ref=db.collection('cal_exceptions').doc(me.uid).collection('dates').doc(dateStr);
+    if(!exc.blocked.length&&!exc.extra.length) await ref.delete();
+    else await ref.set(exc);
+    renderWeek();
+  } catch(e){ toast('Errore salvataggio.','e'); }
+}
+
+function showBookingInfo(id){
+  const b=calBookings.find(b=>b.id===id);
+  if(!b) return;
+  alert('Prenotazione:\nStudente: '+b.studentName+'\nData: '+fd(b.date)+'\nOra: '+b.time+'\nDurata: '+b.duration+' min\nMeet: '+(b.meetLink||'non impostato'));
+}
+
+/* ── PRENOTAZIONI LIST ────────────────────────────── */
+function renderPrenotazioni(){
+  const list=document.getElementById('bookingsList');
+  if(!list) return;
+  const now=new Date();
+  const future=calBookings.filter(b=>{
+    if(b.status==='cancelled') return false;
+    return new Date(b.date+'T'+b.time+':00')>=now;
+  }).sort((a,b)=>a.date.localeCompare(b.date)||a.time.localeCompare(b.time));
+  if(!future.length){
+    list.innerHTML='<div class="empty"><div class="big">U+1F4C5</div>Nessuna prenotazione futura.</div>';
+    return;
+  }
+  list.innerHTML=future.map(b=>'<div class="booking-card">'+
+    '<div class="booking-header">'+
+      '<span class="stu-badge">'+x(b.studentName)+'</span>'+
+      '<span class="booking-status '+(b.status==='confirmed'?'st-ok':'st-warn')+'">'+(b.status==='confirmed'?'Confermata':'Da riprogrammare')+'</span>'+
+    '</div>'+
+    '<div class="booking-info">'+
+      'Data: <strong>'+fd(b.date)+'</strong> &middot; '+b.time+' &middot; '+b.duration+' min'+
+      (b.meetLink?' &middot; <a href="'+b.meetLink+'" target="_blank" class="meet-link">Google Meet</a>':'')+
+    '</div>'+
+    (b.notes?'<div class="booking-notes">'+x(b.notes)+'</div>':'')+
+    '<div class="booking-actions">'+
+      '<button class="btn btn-d btn-sm" onclick="rescheduleBooking(''+b.id+'')">Riprogramma</button>'+
+      '<button class="btn btn-g btn-sm" onclick="showBookingInfo(''+b.id+'')">Dettagli</button>'+
+    '</div>'+
+  '</div>').join('');
+}
+
+async function rescheduleBooking(id){
+  if(!confirm('Segnare questa prenotazione come "da riprogrammare"?\nPotrai accordarti con lo studente tramite i canali RCB Academy.')) return;
+  try {
+    await db.collection('bookings').doc(id).update({status:'reschedule_requested'});
+    toast('Prenotazione segnata come da riprogrammare.','s');
+    await loadCalData();
+  } catch(e){ toast('Errore.','e'); }
+}
+
+/* ── MODAL AGGIUNGI ───────────────────────────────── */
+function openAddBooking(){
+  document.getElementById('modalAddBooking').style.display='flex';
+  document.getElementById('abDate').value=new Date().toISOString().split('T')[0];
+  document.getElementById('abStu').value='';
+  document.getElementById('abTime').value='';
+  document.getElementById('abDuration').value='60';
+  document.getElementById('abMeet').value=calData.settings.meetLink||'';
+  document.getElementById('abNotes').value='';
+  document.getElementById('abStuSug').style.display='none';
+}
+function closeAddBooking(){
+  document.getElementById('modalAddBooking').style.display='none';
+}
+
+function onAbStuInput(){
+  const val=document.getElementById('abStu').value.trim();
+  const sug=document.getElementById('abStuSug');
+  if(!val){ sug.style.display='none'; return; }
+  const matches=myStudents.filter(s=>s.toLowerCase().startsWith(val.toLowerCase()));
+  if(matches.length){
+    sug.innerHTML=matches.map(m=>'<div class="stu-sug-item" onmousedown="document.getElementById('abStu').value=''+x(m)+'';document.getElementById('abStuSug').style.display='none'">'+x(m)+'</div>').join('');
+    if(!matches.some(m=>m.toLowerCase()===val.toLowerCase())&&!val.includes('#')){
+      sug.innerHTML+='<div class="stu-sug-item stu-sug-new" onmousedown="document.getElementById('abStu').value=''+x(val)+'';document.getElementById('abStuSug').style.display='none'">Nuovo: '+x(val)+'</div>';
+    }
+    sug.style.display='block';
+  } else { sug.style.display='none'; }
+}
+
+async function saveManualBooking(){
+  const date=document.getElementById('abDate').value;
+  const stuRaw=document.getElementById('abStu').value.trim();
+  const time=document.getElementById('abTime').value;
+  const duration=parseInt(document.getElementById('abDuration').value);
+  const meetLink=document.getElementById('abMeet').value.trim();
+  const notes=document.getElementById('abNotes').value.trim();
+  if(!date||!stuRaw||!time||!duration){ toast('Compila data, studente, ora e durata.','e'); return; }
+  const btn=document.getElementById('abSaveBtn');
+  btn.disabled=true; btn.textContent='Salvataggio...';
+  try {
+    const studentName=stuRaw.includes('#')?stuRaw:await resolveStudentName(stuRaw);
+    const booking={
+      tutorId:me.uid, studentName, date, time, duration,
+      meetLink:meetLink||null, notes:notes||null,
+      status:'confirmed', manual:true,
+      createdAt:firebase.firestore.FieldValue.serverTimestamp()
+    };
+    await db.collection('bookings').add(booking);
+    await sendBookingEmail({
+      tutorEmail:me.email,
+      tutorName:profilo?.nome||nomeDaEmail(me.email),
+      studentName, date:fd(date), time, duration,
+      meetLink:meetLink||'Non impostato', manual:true
+    });
+    toast('Appuntamento salvato ✅','s');
+    closeAddBooking();
+    await loadCalData();
+  } catch(e){
+    console.error('[RCB] Booking:',e);
+    toast('Errore nel salvataggio.','e');
+  } finally { btn.disabled=false; btn.textContent='Salva appuntamento'; }
+}
+
+/* ── RESEND EMAIL ─────────────────────────────────── */
+async function sendBookingEmail({tutorEmail,tutorName,studentName,date,time,duration,meetLink,manual}){
+  const RESEND_KEY='INSERISCI_RESEND_API_KEY'; // re_"p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCopiR2CfJEAibTLFvE0Spg328kABx5srY3S4Y1cTaQw9f+LkqN+BmVzigN0dbApaB0pQ5+tbWlfL1gCkGSkUyNfpwpo74YSo8Y8rAjSEu00HzaStUhLl6P51d4vjrVFnN8a5Zl9ZCqk06cQ8XgHkT0KeZQM+yA75Rgkf21mJqq+QIDAQAB"
+  if(RESEND_KEY.startsWith('INSERISCI')){ console.warn('[RCB] Resend key not set'); return; }
+  const subject=manual
+    ?'RCB Academy - Appuntamento aggiunto: '+studentName+' il '+date
+    :'RCB Academy - Nuova prenotazione: '+studentName+' il '+date;
+  const html='<div style="font-family:Arial,sans-serif;max-width:540px;margin:0 auto;background:#fff;border-radius:12px;border:1px solid #e8ecf4;overflow:hidden">'
+    +'<div style="background:#161a38;padding:20px;text-align:center"><span style="font-size:20px;color:#fff;font-family:Georgia,serif">RCB <em style="color:#00bbff">Academy</em></span></div>'
+    +'<div style="padding:24px">'
+    +'<p style="color:#1f244a;margin-bottom:16px">Ciao <strong>'+tutorName+'</strong>,</p>'
+    +'<p style="color:#555;margin-bottom:20px">'+(manual?'Hai aggiunto un nuovo appuntamento:' :'Hai ricevuto una nuova prenotazione:')+'</p>'
+    +'<table style="width:100%;border-collapse:collapse;background:#f4f6fb;border-radius:8px;margin-bottom:20px">'
+    +'<tr><td style="padding:9px 14px;font-size:11px;font-weight:700;color:#7a82a8;text-transform:uppercase;width:100px">Studente</td><td style="padding:9px 14px;font-weight:600;color:#1f244a">'+studentName+'</td></tr>'
+    +'<tr style="border-top:1px solid #e8ecf4"><td style="padding:9px 14px;font-size:11px;font-weight:700;color:#7a82a8;text-transform:uppercase">Data</td><td style="padding:9px 14px;color:#1f244a">'+date+'</td></tr>'
+    +'<tr style="border-top:1px solid #e8ecf4"><td style="padding:9px 14px;font-size:11px;font-weight:700;color:#7a82a8;text-transform:uppercase">Ora</td><td style="padding:9px 14px;color:#1f244a">'+time+'</td></tr>'
+    +'<tr style="border-top:1px solid #e8ecf4"><td style="padding:9px 14px;font-size:11px;font-weight:700;color:#7a82a8;text-transform:uppercase">Durata</td><td style="padding:9px 14px;color:#1f244a">'+duration+' minuti</td></tr>'
+    +'<tr style="border-top:1px solid #e8ecf4"><td style="padding:9px 14px;font-size:11px;font-weight:700;color:#7a82a8;text-transform:uppercase">Meet</td><td style="padding:9px 14px"><a href="'+meetLink+'" style="color:#00bbff">'+meetLink+'</a></td></tr>'
+    +'</table>'
+    +'<p style="font-size:11px;color:#7a82a8;border-top:1px solid #e8ecf4;padding-top:14px">Gestisci dalla <a href="https://rcbacademy.com/log-in-tutor" style="color:#00bbff">dashboard tutor RCB Academy</a>.</p>'
+    +'</div></div>';
+  try {
+    const res=await fetch('https://api.resend.com/emails',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+RESEND_KEY},
+      body:JSON.stringify({from:'RCB Academy <noreply@rcbacademy.com>',to:[tutorEmail],subject,html})
+    });
+    if(!res.ok){ const e=await res.json(); console.warn('[RCB] Email err:',e); }
+  } catch(e){ console.warn('[RCB] Email non inviata:',e); }
+}
+
+/* ── SALVA IMPOSTAZIONI CAL ───────────────────────── */
+async function saveCalSettings(){
+  const hours=parseInt(document.getElementById('csAdvance').value)||24;
+  const meet=(document.getElementById('csMeet').value||'').trim();
+  calData.settings={minAdvanceHours:hours,meetLink:meet};
+  try {
+    await db.collection('tutors').doc(me.uid).update({calSettings:calData.settings});
+    toast('Impostazioni salvate ✅','s');
+  } catch(e){ toast('Errore.','e'); }
+}
+
+document.getElementById('lEmail').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('lPass').focus()});
+document.getElementById('lPass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
+</script>
+
+<!--
+═══════════════════════════════════════════════════════════════════════
+ 🔐  FIRESTORE SECURITY RULES — copia in Firebase → Firestore → Regole
+═══════════════════════════════════════════════════════════════════════
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /tutors/{tutorId} {
+      allow read, write: if request.auth != null
+                         && request.auth.uid == tutorId;
+    }
+
+    match /registro_ore/{recId} {
+      allow read, update, delete: if request.auth != null
+        && request.auth.uid == resource.data.tutorID;
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.tutorID;
+    }
+
+    match /student_registry/{nameId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.count == 1
+        && request.resource.data.keys().hasOnly(['count']);
+      allow update: if request.auth != null
+        && request.resource.data.count == resource.data.count + 1
+        && request.resource.data.keys().hasOnly(['count']);
+    }
+
+    // Eccezioni calendario (solo il tutor proprietario)
+    match /cal_exceptions/{tutorId}/dates/{dateId} {
+      allow read, write: if request.auth != null
+                         && request.auth.uid == tutorId;
+    }
+
+    // Prenotazioni
+    match /bookings/{bookingId} {
+      // Tutor: legge e modifica solo le sue prenotazioni
+      allow read, update: if request.auth != null
+        && request.auth.uid == resource.data.tutorId;
+      // Creazione: tutor crea appuntamento manuale
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.tutorId;
+      // Delete: solo il tutor proprietario
+      allow delete: if request.auth != null
+        && request.auth.uid == resource.data.tutorId;
+    }
+
+    match /{doc=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
   html+='</tbody></table>';
   grid.innerHTML=html;
 }
