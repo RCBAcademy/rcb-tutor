@@ -1223,17 +1223,34 @@ function closeAddBooking(){
 }
 
 function onAbStuInput(){
-  const val=document.getElementById('abStu').value.trim();
-  const sug=document.getElementById('abStuSug');
+  const val = document.getElementById('abStu').value.trim();
+  const sug = document.getElementById('abStuSug');
   if(!val){ sug.style.display='none'; return; }
-  const matches=myStudents.filter(s=>s.toLowerCase().startsWith(val.toLowerCase()));
+
+  const matches = myStudents.filter(s => s.toLowerCase().startsWith(val.toLowerCase()));
+
   if(matches.length){
-    sug.innerHTML=matches.map(m=>'<div class="stu-sug-item" onmousedown="document.getElementById('abStu').value=''+x(m)+'';document.getElementById('abStuSug').style.display='none'">'+x(m)+'</div>').join('');
-    if(!matches.some(m=>m.toLowerCase()===val.toLowerCase())&&!val.includes('#')){
-      sug.innerHTML+='<div class="stu-sug-item stu-sug-new" onmousedown="document.getElementById('abStu').value=''+x(val)+'';document.getElementById('abStuSug').style.display='none'">Nuovo: '+x(val)+'</div>';
+    sug.innerHTML = matches.map(m =>
+      `<div class="stu-sug-item" data-name="${x(m)}">${x(m)}</div>`
+    ).join('');
+
+    if(!matches.some(m => m.toLowerCase() === val.toLowerCase()) && !val.includes('#')){
+      sug.innerHTML += `<div class="stu-sug-item stu-sug-new" data-name="${x(val)}">Nuovo: ${x(val)}</div>`;
     }
-    sug.style.display='block';
-  } else { sug.style.display='none'; }
+
+    sug.style.display = 'block';
+
+    // Event delegation — niente inline onclick
+    sug.onclick = function(e){
+      const item = e.target.closest('[data-name]');
+      if(!item) return;
+      document.getElementById('abStu').value = item.dataset.name;
+      sug.style.display = 'none';
+    };
+
+  } else {
+    sug.style.display = 'none';
+  }
 }
 
 async function saveManualBooking(){
