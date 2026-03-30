@@ -94,7 +94,7 @@ html,body{height:100%;font-family:'Lexend',sans-serif;font-size:14px;color:var(-
 .wm{font-size:.72rem;color:rgba(255,255,255,.38)}
 
 /* KPI */
-.kgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.3rem}
+.kgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.3rem}
 .kcard{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:1.1rem 1.3rem;box-shadow:var(--sh);display:flex;align-items:center;gap:.9rem}
 .kico{width:40px;height:40px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
 .kico.b{background:var(--sky-dim)}.kico.g{background:rgba(34,200,138,.12)}.kico.a{background:rgba(240,160,48,.12)}
@@ -175,6 +175,35 @@ tr:hover td{background:var(--off)}
 .toast.s{border-left-color:var(--success)}.toast.e{border-left-color:var(--danger)}
 @keyframes ti{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
 
+
+/* ── CALENDARIO ─────────────────────────────── */
+.cal-tabs{display:flex;background:#fff;border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:1.1rem;box-shadow:var(--sh)}
+.cal-tab{flex:1;padding:.7rem .6rem;text-align:center;font-size:.75rem;font-weight:600;cursor:pointer;color:var(--muted);transition:all .15s;border-right:1px solid var(--border)}
+.cal-tab:last-child{border-right:none}
+.cal-tab.active{background:var(--navy-dark);color:#fff}
+.cal-tab:hover:not(.active){background:var(--off)}
+.cal-table{border-collapse:collapse;min-width:580px;width:100%}
+.cal-time-label{font-size:.63rem;color:var(--muted);padding:.15rem .45rem;text-align:right;white-space:nowrap;width:48px;vertical-align:middle}
+.cal-day-head{text-align:center;font-size:.72rem;font-weight:700;color:var(--navy);padding:.55rem .2rem;border-bottom:2px solid var(--border)}
+.cal-today-head{color:var(--sky) !important}
+.cal-day-num{display:block;font-size:.6rem;font-weight:400;color:var(--muted);margin-top:1px}
+.cal-cell{height:19px;cursor:pointer;border:1px solid #f0f2f9;transition:background .1s;vertical-align:middle}
+.cal-cell:hover:not(.cal-past){filter:brightness(.92)}
+.cal-avail{background:var(--sky-dim);border-color:rgba(0,187,255,.25) !important}
+.cal-booked{background:rgba(34,200,138,.18);border-color:rgba(34,200,138,.4) !important;cursor:pointer}
+.cal-past{background:#f9f9f9;opacity:.35;cursor:default}
+.cal-booking-chip{display:block;font-size:.58rem;font-weight:700;color:#0e6644;padding:0 3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.booking-card{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:1rem 1.2rem;margin-bottom:.8rem;box-shadow:var(--sh)}
+.booking-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.45rem}
+.booking-info{font-size:.79rem;color:var(--muted);margin-bottom:.3rem}
+.booking-notes{font-size:.75rem;color:var(--text);background:var(--off);border-radius:6px;padding:.35rem .65rem;margin-bottom:.5rem}
+.booking-actions{display:flex;gap:.5rem}
+.booking-status{font-size:.63rem;font-weight:700;padding:.15rem .5rem;border-radius:20px}
+.st-ok{background:rgba(34,200,138,.12);color:#0e6644}
+.st-warn{background:rgba(240,160,48,.12);color:#7a4800}
+.meet-link{color:var(--sky);text-decoration:none;font-weight:600}
+.meet-link:hover{text-decoration:underline}
+
 @media(max-width:768px){.kgrid{grid-template-columns:1fr}.fg2{grid-template-columns:1fr}.sidebar{display:none}}
 </style>
 </head>
@@ -207,7 +236,7 @@ tr:hover td{background:var(--off)}
       <input type="password" id="lPass" placeholder="••••••••" autocomplete="current-password">
     </div>
     <button class="btn-login" id="loginBtn" onclick="doLogin()">Accedi</button>
-    <div class="login-foot">Problemi di accesso? Scrivi a <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="b5d4d1d8dcdbf5c7d6d7d4d6d4d1d0d8cc9bd6dad8">[email&#160;protected]</a></div>
+    <div class="login-foot">Problemi di accesso? Scrivi a admin@rcbacademy.com</div>
   </div>
 </div>
 
@@ -239,6 +268,10 @@ tr:hover td{background:var(--off)}
       <div class="ni" onclick="sw('materiali',this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
         Materiali
+      </div>
+      <div class="ni" onclick="sw('calendario',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Calendario
       </div>
       <div class="sb-sec" style="margin-top:.4rem">Account</div>
       <div class="ni" onclick="sw('impostazioni',this)">
@@ -272,7 +305,6 @@ tr:hover td{background:var(--off)}
           <div class="kcard"><div class="kico b">⏱️</div><div><div class="kv" id="kOre">0h</div><div class="kl">Ore totali</div></div></div>
           <div class="kcard"><div class="kico g">👤</div><div><div class="kv" id="kStu">0</div><div class="kl">Studenti seguiti</div></div></div>
           <div class="kcard"><div class="kico a">📋</div><div><div class="kv" id="kLez">0</div><div class="kl">Lezioni registrate</div></div></div>
-          <div class="kcard"><div class="kico g">💶</div><div><div class="kv" id="kComp">€0</div><div class="kl">Compenso totale</div></div></div>
         </div>
         <div class="card">
           <div class="card-ttl">Ultime lezioni</div>
@@ -305,23 +337,10 @@ tr:hover td{background:var(--off)}
               <div class="field-hint" id="stuHint">Scrivi solo il nome. Il sistema assegnerà un ID univoco per distinguere studenti omonimi.</div>
               <span class="preview-badge" id="stuPreview"></span>
             </div>
-            <div class="fg"><label>Tariffa €/h *</label>
-              <select id="fTariffa">
-                <option value="">— Seleziona tariffa —</option>
-                <option value="8">8 €/h — Medie (1° studente)</option>
-                <option value="10">10 €/h — Medie</option>
-                <option value="11">11 €/h — Superiori/Test/Cert. (1° studente)</option>
-                <option value="13">13 €/h — Superiori/Test/Cert.</option>
-                <option value="13uni">13 €/h — Università (1° studente)</option>
-                <option value="15">15 €/h — Università</option>
-              </select>
-            </div>
-            <div class="fg"><label>Ore svolte *</label><input type="number" id="fOre" min="0.5" max="8" step="0.5" placeholder="1.5" oninput="aggiornaPreviewCompenso()"></div>
+            <div class="fg"><label>Materia *</label><input type="text" id="fMat" placeholder="Matematica"></div>
+            <div class="fg"><label>Ore svolte *</label><input type="number" id="fOre" min="0.5" max="8" step="0.5" placeholder="1.5"></div>
           </div>
           <div class="fg"><label>Note</label><textarea id="fNote" placeholder="Argomenti trattati, progressi..."></textarea></div>
-          <div id="compensoPreview" style="display:none;background:rgba(34,200,138,.1);border:1px solid rgba(34,200,138,.3);border-radius:8px;padding:.6rem 1rem;font-size:.82rem;color:#167a5a;margin-bottom:.6rem">
-            💶 Compenso lezione: <strong id="compensoVal">—</strong>
-          </div>
           <div class="fa">
             <button class="btn btn-p" id="saveBtn" onclick="salva()">Salva lezione</button>
             <button class="btn btn-g" onclick="toggleForm(false)">Annulla</button>
@@ -330,9 +349,120 @@ tr:hover td{background:var(--off)}
 
         <div class="tw">
           <table>
-            <thead><tr><th>Data</th><th>Studente</th><th>Tariffa</th><th>Ore</th><th>Compenso</th><th>Note</th><th></th></tr></thead>
+            <thead><tr><th>Data</th><th>Studente</th><th>Materia</th><th>Ore</th><th>Note</th><th></th></tr></thead>
             <tbody id="regBody"><tr><td colspan="6"><div class="empty"><div class="big">📋</div>Nessuna lezione. Clicca "+ Aggiungi lezione".</div></td></tr></tbody>
           </table>
+        </div>
+      </div>
+
+
+      <!-- CALENDARIO -->
+      <div class="view" id="view-calendario">
+        <div class="rh">
+          <div><div class="pg-ttl">Calendario</div><div class="pg-sub">Disponibilita', prenotazioni e appuntamenti</div></div>
+          <button class="btn btn-p" onclick="openAddBooking()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Aggiungi appuntamento
+          </button>
+        </div>
+
+        <div class="cal-tabs">
+          <div class="cal-tab active" id="calTab-schema" onclick="switchCalTab('schema')">Schema Settimanale</div>
+          <div class="cal-tab" id="calTab-settimana" onclick="switchCalTab('settimana')">Questa Settimana</div>
+          <div class="cal-tab" id="calTab-prenotazioni" onclick="switchCalTab('prenotazioni')">Prenotazioni</div>
+        </div>
+
+        <!-- SCHEMA -->
+        <div id="calPane-schema">
+          <div class="card" style="margin-bottom:.8rem">
+            <div class="card-ttl">Schema ricorrente settimanale</div>
+            <p style="font-size:.78rem;color:var(--muted);margin-bottom:1rem">Clicca sulle celle per impostare gli orari disponibili ogni settimana. Usa "Questa Settimana" per bloccare o aggiungere slot su date specifiche.</p>
+            <div style="overflow-x:auto;margin-bottom:1rem"><div id="schemaGrid"></div></div>
+            <div style="display:flex;gap:.7rem;align-items:center;flex-wrap:wrap">
+              <button class="btn btn-p" onclick="saveSchema()">Salva schema</button>
+              <span style="font-size:.7rem;color:var(--muted);display:flex;align-items:center;gap:.5rem">
+                <span style="display:inline-flex;align-items:center;gap:4px"><span style="width:12px;height:12px;background:var(--sky-dim);border:1px solid rgba(0,187,255,.3);border-radius:3px;display:inline-block"></span>Disponibile</span>
+                <span style="display:inline-flex;align-items:center;gap:4px"><span style="width:12px;height:12px;background:#f0f2f9;border:1px solid #ddd;border-radius:3px;display:inline-block"></span>Non disponibile</span>
+              </span>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-ttl">Impostazioni calendario</div>
+            <div class="fg2">
+              <div class="fg">
+                <label>Preavviso minimo prenotazione</label>
+                <select id="csAdvance">
+                  <option value="6">6 ore</option>
+                  <option value="12">12 ore</option>
+                  <option value="24" selected>24 ore</option>
+                  <option value="48">48 ore (2 giorni)</option>
+                  <option value="72">72 ore (3 giorni)</option>
+                </select>
+              </div>
+              <div class="fg">
+                <label>Link Google Meet predefinito</label>
+                <input type="url" id="csMeet" placeholder="https://meet.google.com/xxx-xxx-xxx">
+              </div>
+            </div>
+            <button class="btn btn-p btn-sm" onclick="saveCalSettings()">Salva impostazioni</button>
+          </div>
+        </div>
+
+        <!-- SETTIMANA -->
+        <div id="calPane-settimana" style="display:none">
+          <div class="card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.8rem">
+              <button class="btn btn-g btn-sm" onclick="calWeekOffset--;renderWeek()">Prec.</button>
+              <div style="font-size:.88rem;font-weight:700;color:var(--navy)" id="weekTitle"></div>
+              <button class="btn btn-g btn-sm" onclick="calWeekOffset++;renderWeek()">Succ.</button>
+            </div>
+            <div style="display:flex;gap:1rem;flex-wrap:wrap;font-size:.7rem;color:var(--muted);margin-bottom:.8rem">
+              <span style="display:inline-flex;align-items:center;gap:4px"><span style="width:11px;height:11px;background:var(--sky-dim);border-radius:2px;display:inline-block"></span>Disponibile (clicca per bloccare)</span>
+              <span style="display:inline-flex;align-items:center;gap:4px"><span style="width:11px;height:11px;background:rgba(34,200,138,.18);border-radius:2px;display:inline-block"></span>Prenotato</span>
+              <span style="display:inline-flex;align-items:center;gap:4px"><span style="width:11px;height:11px;background:#f0f2f9;border-radius:2px;display:inline-block"></span>Non disponibile (clicca per slot extra)</span>
+            </div>
+            <div style="overflow-x:auto"><div id="weekGrid"></div></div>
+          </div>
+        </div>
+
+        <!-- PRENOTAZIONI -->
+        <div id="calPane-prenotazioni" style="display:none">
+          <div id="bookingsList"></div>
+        </div>
+      </div>
+
+      <!-- MODAL AGGIUNGI APPUNTAMENTO -->
+      <div id="modalAddBooking" class="cal-modal-overlay" style="display:none;position:fixed;inset:0;z-index:8888;background:rgba(22,26,56,.65);align-items:center;justify-content:center">
+        <div style="background:#fff;border-radius:16px;padding:1.8rem;width:100%;max-width:500px;max-height:90vh;overflow-y:auto;box-shadow:var(--sh-lg);margin:1rem">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2rem">
+            <div style="font-size:.95rem;font-weight:700;color:var(--navy)">Nuovo appuntamento</div>
+            <button onclick="closeAddBooking()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--muted);line-height:1">x</button>
+          </div>
+          <div class="fg2">
+            <div class="fg"><label>Data *</label><input type="date" id="abDate"></div>
+            <div class="fg"><label>Ora *</label><input type="time" id="abTime" step="1800"></div>
+          </div>
+          <div class="fg">
+            <label>Studente * <span style="font-weight:400;text-transform:none;font-size:.65rem">(solo il nome/pseudonimo)</span></label>
+            <div class="stu-wrap">
+              <input type="text" id="abStu" placeholder="es. Marco" autocomplete="off"
+                oninput="onAbStuInput()" onfocus="onAbStuInput()" onblur="hideSugDelay()">
+              <div class="stu-suggestions" id="abStuSug"></div>
+            </div>
+          </div>
+          <div class="fg">
+            <label>Durata *</label>
+            <select id="abDuration">
+              <option value="30">30 minuti</option>
+              <option value="60" selected>1 ora (60 min)</option>
+            </select>
+          </div>
+          <div class="fg"><label>Link Google Meet</label><input type="url" id="abMeet" placeholder="https://meet.google.com/xxx-xxx-xxx"></div>
+          <div class="fg"><label>Note</label><textarea id="abNotes" placeholder="Note opzionali..." style="min-height:55px"></textarea></div>
+          <div style="display:flex;gap:.7rem;margin-top:.4rem">
+            <button class="btn btn-p" id="abSaveBtn" onclick="saveManualBooking()">Salva appuntamento</button>
+            <button class="btn btn-g" onclick="closeAddBooking()">Annulla</button>
+          </div>
         </div>
       </div>
 
@@ -343,7 +473,7 @@ tr:hover td{background:var(--off)}
           <div class="drive-ico">📁</div>
           <h3>Cartella materiali RCB Academy</h3>
           <p>RCB Academy gestisce i materiali didattici su <strong>Google Drive</strong>.<br>L'amministratore ha creato e condiviso con te una cartella dedicata.</p>
-          <div id="driveArea"><div class="no-link">⏳ Cartella Drive non ancora assegnata.<br>Contatta: <strong><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="d2b3b6bfbbbc92a0b1b0b3b1b3b6b7bfabfcb1bdbf">[email&#160;protected]</a></strong></div></div>
+          <div id="driveArea"><div class="no-link">⏳ Cartella Drive non ancora assegnata.<br>Contatta: <strong>admin@rcbacademy.com</strong></div></div>
         </div>
         <div class="card">
           <div class="card-ttl">Come funziona</div>
@@ -366,22 +496,25 @@ tr:hover td{background:var(--off)}
             <div class="ir"><span class="il">Ruolo</span><span class="iv">Tutor RCB Academy</span></div>
             <div class="ir"><span class="il">Stato</span><span class="iv" style="color:var(--success)">✅ Attivo</span></div>
           </div>
-          <div style="background:rgba(240,160,48,.08);border:1px solid rgba(240,160,48,.25);border-radius:8px;padding:.8rem 1rem;font-size:.76rem;color:#6b4c00;">
-            🔐 Per modificare la password contatta l&#39;amministrazione: <strong>admin@rcbacademy.com</strong>
+          <div>
+            <div class="stt-h">Cambia password</div>
+            <div class="fg"><label>Nuova password</label><input type="password" id="nPass" placeholder="Almeno 8 caratteri"></div>
+            <div class="fg"><label>Conferma password</label><input type="password" id="nPassC" placeholder="Ripeti la password"></div>
+            <button class="btn btn-p" onclick="cambiaPass()">Aggiorna password</button>
           </div>
         </div>
         <div class="card">
           <div class="stt-h">Privacy, GDPR e protezione dati</div>
           <div style="font-size:.78rem;color:var(--muted);line-height:1.7">
             Tutti i dati sono trattati da <strong>PT AITELOR RCB GLOBAL</strong> nel rispetto del GDPR (Reg. UE 2016/679), del D.Lgs. 196/2003 e della Legge indonesiana n. 27/2022 (PDP).<br>
-            Per richieste privacy: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="19787d747077596b7a7b787a787d7c7460377a7674">[email&#160;protected]</a>
+            Per richieste privacy: admin@rcbacademy.com
           </div>
           <div class="gdpr-box">
             <strong>⚠️ Informativa trasferimenti extra-UE (Art. 13 GDPR)</strong><br>
             I dati inseriti in questa dashboard sono archiviati su <strong>Firebase/Firestore (Google LLC, USA)</strong> — trasferimento garantito da Clausole Contrattuali Standard (SCC) e certificazione EU-US Data Privacy Framework.<br>
             La dashboard è ospitata su <strong>GitHub Pages (Microsoft Corp., USA)</strong> — nessun dato personale archiviato su GitHub.<br>
             Il Titolare del trattamento (PT AITELOR RCB GLOBAL) ha sede in <strong>Indonesia</strong>, paese privo di decisione di adeguatezza UE. I trasferimenti verso la sede sono regolati da SCC.<br><br>
-            <strong>🛡️ Tutela minorenni UE:</strong> il sistema tratta dati pseudonimizzati degli studenti (solo nome + numero progressivo). Non inserire mai cognomi, email o altri dati identificativi degli studenti nel registro ore. In caso di dubbi, contatta <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="a4c5c0c9cdcae4d6c7c6c5c7c5c0c1c9dd8ac7cbc9">[email&#160;protected]</a>.
+            <strong>🛡️ Tutela minorenni UE:</strong> il sistema tratta dati pseudonimizzati degli studenti (solo nome + numero progressivo). Non inserire mai cognomi, email o altri dati identificativi degli studenti nel registro ore. In caso di dubbi, contatta admin@rcbacademy.com.
           </div>
         </div>
       </div>
@@ -390,7 +523,7 @@ tr:hover td{background:var(--off)}
   </main>
 </div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script>
 /* ══════════════════════════════════════════════════════
    ⚙️  CONFIGURAZIONE FIREBASE — sostituisci con i tuoi valori
    Firebase Console → Impostazioni progetto → Le tue app → Web
@@ -414,7 +547,7 @@ let cache   = [];
 let editId  = null;
 let myStudents = [];  // nomi studenti già usati da questo tutor
 
-const VTITLES = { home:'Dashboard', registro:'Registro Ore', materiali:'Materiali', impostazioni:'Impostazioni' };
+const VTITLES = { home:'Dashboard', registro:'Registro Ore', materiali:'Materiali', calendario:'Calendario', impostazioni:'Impostazioni' };
 
 /* ══════════════════════════════════════════════════════
    AUTH
@@ -493,7 +626,24 @@ function updateUI(u, p) {
   }
 }
 
-
+/* ══════════════════════════════════════════════════════
+   CAMBIO PASSWORD
+══════════════════════════════════════════════════════ */
+async function cambiaPass() {
+  const np = document.getElementById('nPass').value;
+  const nc = document.getElementById('nPassC').value;
+  if (!np || np.length < 8) { toast('La password deve essere di almeno 8 caratteri.','e'); return; }
+  if (np !== nc)            { toast('Le password non coincidono.','e'); return; }
+  try {
+    await me.updatePassword(np);
+    document.getElementById('nPass').value = '';
+    document.getElementById('nPassC').value = '';
+    toast('Password aggiornata ✅','s');
+  } catch(e) {
+    if (e.code === 'auth/requires-recent-login') toast('Per sicurezza, esci e rientra prima di cambiare la password.','e');
+    else toast('Errore aggiornamento password.','e');
+  }
+}
 
 /* ══════════════════════════════════════════════════════
    CARICA LEZIONI
@@ -518,27 +668,6 @@ async function loadLezioni() {
 }
 
 /* ══════════════════════════════════════════════════════
-   PREVIEW COMPENSO NEL FORM
-══════════════════════════════════════════════════════ */
-function aggiornaPreviewCompenso() {
-  const ore      = parseFloat(document.getElementById('fOre').value);
-  const tariffa  = parseFloat(document.getElementById('fTariffa').value);
-  const prev     = document.getElementById('compensoPreview');
-  const val      = document.getElementById('compensoVal');
-  if (ore > 0 && tariffa > 0) {
-    val.textContent = '€' + (ore * tariffa).toFixed(2);
-    prev.style.display = 'block';
-  } else {
-    prev.style.display = 'none';
-  }
-}
-// Aggiorna preview anche al cambio tariffa
-document.addEventListener('DOMContentLoaded', () => {
-  const sel = document.getElementById('fTariffa');
-  if(sel) sel.addEventListener('change', aggiornaPreviewCompenso);
-});
-
-/* ══════════════════════════════════════════════════════
    RENDER TABELLA
 ══════════════════════════════════════════════════════ */
 function renderTabella() {
@@ -551,10 +680,9 @@ function renderTabella() {
     <tr>
       <td>${fd(l.data)}</td>
       <td><span class="stu-badge">${x(l.nomeStudente)}</span></td>
-      <td><span class="badge">${l.tariffa}€/h</span></td>
+      <td><span class="badge">${x(l.materia)}</span></td>
       <td class="td-h">${l.ore}h</td>
-      <td class="td-h" style="color:var(--success)">€${(l.ore * l.tariffa).toFixed(2)}</td>
-      <td style="color:var(--muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${x(l.note||'—')}</td>
+      <td style="color:var(--muted);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${x(l.note||'—')}</td>
       <td><div class="tda">
         <button class="btn btn-g btn-sm" onclick="modifica('${l.id}')">✏️</button>
         <button class="btn btn-d btn-sm" onclick="elimina('${l.id}')">🗑️</button>
@@ -568,13 +696,10 @@ function renderTabella() {
 function renderKPI() {
   const tot  = cache.reduce((s,l) => s + (parseFloat(l.ore)||0), 0);
   const stus = new Set(cache.map(l => l.nomeStudente));
-  const totComp = cache.reduce((s,l) => s + (parseFloat(l.ore)||0)*(parseFloat(l.tariffa)||0), 0);
   document.getElementById('kOre').textContent  = tot + 'h';
   document.getElementById('kStu').textContent  = stus.size;
   document.getElementById('kLez').textContent  = cache.length;
   document.getElementById('totOre').textContent = tot + 'h';
-  const kComp = document.getElementById('kComp');
-  if(kComp) kComp.textContent = '€' + totComp.toFixed(2);
   const ul  = document.getElementById('homeUlt');
   const top = cache.slice(0,3);
   if (!top.length) {
@@ -584,7 +709,7 @@ function renderKPI() {
   ul.innerHTML = top.map(l => `
     <div style="display:flex;justify-content:space-between;align-items:center;padding:.6rem 0;border-bottom:1px solid var(--border)">
       <div>
-        <div style="font-size:.82rem;font-weight:500"><span class="stu-badge">${x(l.nomeStudente)}</span> — <span class="badge">${l.tariffa}€/h</span> <span style="color:var(--success);font-weight:700">€${(l.ore * l.tariffa).toFixed(2)}</span></div>
+        <div style="font-size:.82rem;font-weight:500"><span class="stu-badge">${x(l.nomeStudente)}</span> — <span class="badge">${x(l.materia)}</span></div>
         <div style="font-size:.7rem;color:var(--muted)">${fd(l.data)}</div>
       </div>
       <div style="font-size:.95rem;font-weight:700;color:var(--sky)">${l.ore}h</div>
@@ -693,9 +818,7 @@ function toggleForm(apri) {
 }
 
 function resetForm() {
-  ['fData','fStu','fOre','fNote'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('fTariffa').value = '';
-  document.getElementById('compensoPreview').style.display = 'none';
+  ['fData','fStu','fMat','fOre','fNote'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('stuSug').style.display  = 'none';
   document.getElementById('stuPreview').style.display = 'none';
   document.getElementById('stuHint').textContent = 'Scrivi solo il nome. Il sistema assegnerà un ID univoco per distinguere studenti omonimi.';
@@ -710,15 +833,14 @@ function resetForm() {
 async function salva() {
   const data  = document.getElementById('fData').value;
   const stuRaw= document.getElementById('fStu').value.trim();
-  const tariffaRaw = document.getElementById('fTariffa').value;
-  const tariffa = parseFloat(tariffaRaw);
+  const mat   = document.getElementById('fMat').value.trim();
   const ore   = parseFloat(document.getElementById('fOre').value);
   const note  = document.getElementById('fNote').value.trim();
 
-  if (!data)              { toast('Inserisci la data.','e'); return; }
-  if (!stuRaw)            { toast('Inserisci il nome dello studente.','e'); return; }
-  if (!tariffaRaw)        { toast('Seleziona la tariffa.','e'); return; }
-  if (!ore || ore<=0)     { toast('Inserisci le ore svolte.','e'); return; }
+  if (!data)         { toast('Inserisci la data.','e'); return; }
+  if (!stuRaw)       { toast('Inserisci il nome dello studente.','e'); return; }
+  if (!mat)          { toast('Inserisci la materia.','e'); return; }
+  if (!ore || ore<=0){ toast('Inserisci le ore svolte.','e'); return; }
 
   const btn = document.getElementById('saveBtn');
   btn.disabled = true; btn.textContent = 'Elaborazione…';
@@ -732,7 +854,7 @@ async function salva() {
     const rec = {
       tutorID: me.uid,
       nomeStudente,
-      data, ore, tariffa,
+      data, ore, materia: mat,
       note: note||null,
       aggiornatoAt: firebase.firestore.FieldValue.serverTimestamp()
     };
@@ -743,7 +865,7 @@ async function salva() {
     } else {
       rec.createdAt = firebase.firestore.FieldValue.serverTimestamp();
       await db.collection('registro_ore').add(rec);
-      toast(`Lezione salvata — ${nomeStudente} · €${(ore*tariffa).toFixed(2)} ✅`,'s');
+      toast(`Lezione salvata — studente: ${nomeStudente} ✅`,'s');
     }
     toggleForm(false);
     await loadLezioni();
@@ -765,9 +887,7 @@ function modifica(id) {
   editId = id;
   document.getElementById('fData').value = l.data;
   document.getElementById('fStu').value  = l.nomeStudente;
-  const sel = document.getElementById('fTariffa');
-  sel.value = String(l.tariffa);
-  if(!sel.value) sel.value = ''; // fallback if value doesn't match option
+  document.getElementById('fMat').value  = l.materia;
   document.getElementById('fOre').value  = l.ore;
   document.getElementById('fNote').value = l.note||'';
   const prev = document.getElementById('stuPreview');
@@ -799,6 +919,7 @@ function sw(id, el) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById('view-'+id).classList.add('active');
   document.getElementById('tTitle').textContent = VTITLES[id]||'';
+  if(id==='calendario') loadCalData();
 }
 
 /* ══════════════════════════════════════════════════════
@@ -823,6 +944,335 @@ function showErr(el, msg) { el.textContent = msg; el.style.display = 'block'; }
 function fd(d) { if(!d)return'—'; const[y,m,g]=d.split('-'); return `${g}/${m}/${y}`; }
 function nomeDaEmail(e) { return e.split('@')[0].replace(/[._]/g,' ').replace(/\b\w/g,c=>c.toUpperCase()); }
 function x(s) { if(!s)return''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+/* ══════════════════════════════════════════════════════
+   CALENDARIO — stato
+══════════════════════════════════════════════════════ */
+let calData     = { availability:{}, settings:{minAdvanceHours:24,meetLink:''} };
+let calBookings = [];
+let calWeekOffset = 0;
+let calTabActive  = 'schema';
+
+const SLOTS = (()=>{
+  const s=[];
+  for(let h=7;h<22;h++){s.push(ph(h)+':00');s.push(ph(h)+':30');}
+  return s;
+})();
+const DAYS_IT   = ['Lun','Mar','Mer','Gio','Ven','Sab','Dom'];
+
+function ph(n){return String(n).padStart(2,'0');}
+
+function getWeekStart(offset){
+  const d=new Date();
+  const day=d.getDay()||7;
+  d.setDate(d.getDate()-day+1+(offset||0)*7);
+  d.setHours(0,0,0,0);
+  return d;
+}
+function ds(d){return d.getFullYear()+'-'+ph(d.getMonth()+1)+'-'+ph(d.getDate());}
+
+/* ── CARICA DATI ───────────────────────────────────── */
+async function loadCalData(){
+  if(!me) return;
+  try {
+    const tSnap = await db.collection('tutors').doc(me.uid).get();
+    if(tSnap.exists){
+      const td = tSnap.data();
+      calData.availability = td.availability || {};
+      calData.settings     = td.calSettings  || {minAdvanceHours:24,meetLink:''};
+    }
+    const excSnap = await db.collection('cal_exceptions').doc(me.uid).collection('dates').get();
+    calData.exceptions = {};
+    excSnap.docs.forEach(d=>{ calData.exceptions[d.id]=d.data(); });
+
+    const bSnap = await db.collection('bookings')
+      .where('tutorId','==',me.uid)
+      .orderBy('date','asc').get();
+    calBookings = bSnap.docs.map(d=>({id:d.id,...d.data()}));
+
+    // Restore settings fields
+    const s = calData.settings;
+    const adv = document.getElementById('csAdvance');
+    if(adv) adv.value = String(s.minAdvanceHours||24);
+    const mt = document.getElementById('csMeet');
+    if(mt) mt.value = s.meetLink||'';
+
+    switchCalTab(calTabActive);
+  } catch(e){ console.error('[RCB] CalLoad:',e); }
+}
+
+/* ── SUB-TABS ─────────────────────────────────────── */
+function switchCalTab(tab){
+  calTabActive = tab;
+  ['schema','settimana','prenotazioni'].forEach(t=>{
+    const tb = document.getElementById('calTab-'+t);
+    const pn = document.getElementById('calPane-'+t);
+    if(tb) tb.classList.toggle('active', t===tab);
+    if(pn) pn.style.display = t===tab ? 'block' : 'none';
+  });
+  if(tab==='schema')      renderSchema();
+  if(tab==='settimana')   renderWeek();
+  if(tab==='prenotazioni') renderPrenotazioni();
+}
+
+/* ── SCHEMA SETTIMANALE ───────────────────────────── */
+function renderSchema(){
+  const grid = document.getElementById('schemaGrid');
+  if(!grid) return;
+  let html='<table class="cal-table"><thead><tr><th style="width:48px"></th>';
+  DAYS_IT.forEach(d=>{ html+='<th class="cal-day-head">'+d+'</th>'; });
+  html+='</tr></thead><tbody>';
+  SLOTS.forEach(slot=>{
+    const isHour = slot.endsWith(':00');
+    html+='<tr>';
+    html+='<td class="cal-time-label" style="'+(isHour?'font-weight:600;color:var(--text)':'')+'">'+slot+'</td>';
+    for(let d=0;d<7;d++){
+      const avail=(calData.availability[d]||[]).includes(slot);
+      html+='<td class="cal-cell '+(avail?'cal-avail':'')+'" onclick="toggleSchema('+d+',''+slot+'')" data-day="'+d+'" data-slot="'+slot+'"></td>';
+    }
+    html+='</tr>';
+  });
+  html+='</tbody></table>';
+  grid.innerHTML=html;
+}
+
+function toggleSchema(day,slot){
+  if(!calData.availability[day]) calData.availability[day]=[];
+  const arr=calData.availability[day];
+  const idx=arr.indexOf(slot);
+  if(idx>-1) arr.splice(idx,1); else arr.push(slot);
+  document.querySelectorAll('[data-day="'+day+'"][data-slot="'+slot+'"]')
+    .forEach(el=>el.classList.toggle('cal-avail'));
+}
+
+async function saveSchema(){
+  try {
+    await db.collection('tutors').doc(me.uid).update({
+      availability: calData.availability
+    });
+    toast('Schema salvato ✅','s');
+  } catch(e){ toast('Errore salvataggio schema.','e'); }
+}
+
+/* ── SETTIMANA ─────────────────────────────────────── */
+function renderWeek(){
+  const ws  = getWeekStart(calWeekOffset);
+  const we  = new Date(ws); we.setDate(ws.getDate()+6);
+  const wt  = document.getElementById('weekTitle');
+  if(wt) wt.textContent = ws.getDate()+'/'+ph(ws.getMonth()+1)+' - '+we.getDate()+'/'+ph(we.getMonth()+1)+'/'+we.getFullYear();
+  const grid = document.getElementById('weekGrid');
+  if(!grid) return;
+  const now = new Date();
+  let html='<table class="cal-table"><thead><tr><th style="width:48px"></th>';
+  for(let d=0;d<7;d++){
+    const date=new Date(ws); date.setDate(ws.getDate()+d);
+    const today=ds(date)===ds(new Date());
+    html+='<th class="cal-day-head '+(today?'cal-today-head':'')+'">'+DAYS_IT[d]+'<span class="cal-day-num">'+date.getDate()+'/'+ph(date.getMonth()+1)+'</span></th>';
+  }
+  html+='</tr></thead><tbody>';
+  SLOTS.forEach(slot=>{
+    const isHour=slot.endsWith(':00');
+    html+='<tr>';
+    html+='<td class="cal-time-label" style="'+(isHour?'font-weight:600;color:var(--text)':'')+'">'+slot+'</td>';
+    for(let d=0;d<7;d++){
+      const date=new Date(ws); date.setDate(ws.getDate()+d);
+      const dateStr=ds(date);
+      const exc=(calData.exceptions&&calData.exceptions[dateStr])||{blocked:[],extra:[]};
+      const inTpl=(calData.availability[d]||[]).includes(slot);
+      const blocked=(exc.blocked||[]).includes(slot);
+      const extra=(exc.extra||[]).includes(slot);
+      const isAvail=(inTpl&&!blocked)||extra;
+      const slotDt=new Date(dateStr+'T'+slot+':00');
+      const isPast=slotDt<now;
+      const booking=calBookings.find(b=>b.date===dateStr&&b.time===slot&&b.status!=='cancelled');
+      let cls='cal-cell';
+      let content='';
+      let onclick='';
+      if(isPast){ cls+=' cal-past'; }
+      else if(booking){ cls+=' cal-booked'; content='<span class="cal-booking-chip">'+x(booking.studentName)+'</span>'; onclick="showBookingInfo('"+booking.id+"')"; }
+      else if(isAvail){ cls+=' cal-avail'; onclick="toggleException('"+dateStr+"',"+d+",'"+slot+"',false)"; }
+      else { onclick="toggleException('"+dateStr+"',"+d+",'"+slot+"',true)"; }
+      html+='<td class="'+cls+'" onclick="'+onclick+'">'+content+'</td>';
+    }
+    html+='</tr>';
+  });
+  html+='</tbody></table>';
+  grid.innerHTML=html;
+}
+
+async function toggleException(dateStr,dayIdx,slot,isAddingExtra){
+  if(!calData.exceptions) calData.exceptions={};
+  const exc=calData.exceptions[dateStr]||{blocked:[],extra:[]};
+  if(!exc.blocked) exc.blocked=[];
+  if(!exc.extra)   exc.extra=[];
+  const inTpl=(calData.availability[dayIdx]||[]).includes(slot);
+  if(inTpl){
+    const i=exc.blocked.indexOf(slot);
+    if(i>-1){ exc.blocked.splice(i,1); toast('Slot ripristinato per '+dateStr,'s'); }
+    else { exc.blocked.push(slot); toast('Slot bloccato per '+dateStr,'s'); }
+  } else {
+    const i=exc.extra.indexOf(slot);
+    if(i>-1){ exc.extra.splice(i,1); toast('Slot extra rimosso.','s'); }
+    else { exc.extra.push(slot); toast('Slot extra aggiunto per '+dateStr,'s'); }
+  }
+  calData.exceptions[dateStr]=exc;
+  try {
+    const ref=db.collection('cal_exceptions').doc(me.uid).collection('dates').doc(dateStr);
+    if(!exc.blocked.length&&!exc.extra.length) await ref.delete();
+    else await ref.set(exc);
+    renderWeek();
+  } catch(e){ toast('Errore salvataggio.','e'); }
+}
+
+function showBookingInfo(id){
+  const b=calBookings.find(b=>b.id===id);
+  if(!b) return;
+  alert('Prenotazione:\nStudente: '+b.studentName+'\nData: '+fd(b.date)+'\nOra: '+b.time+'\nDurata: '+b.duration+' min\nMeet: '+(b.meetLink||'non impostato'));
+}
+
+/* ── PRENOTAZIONI LIST ────────────────────────────── */
+function renderPrenotazioni(){
+  const list=document.getElementById('bookingsList');
+  if(!list) return;
+  const now=new Date();
+  const future=calBookings.filter(b=>{
+    if(b.status==='cancelled') return false;
+    return new Date(b.date+'T'+b.time+':00')>=now;
+  }).sort((a,b)=>a.date.localeCompare(b.date)||a.time.localeCompare(b.time));
+  if(!future.length){
+    list.innerHTML='<div class="empty"><div class="big">U+1F4C5</div>Nessuna prenotazione futura.</div>';
+    return;
+  }
+  list.innerHTML=future.map(b=>'<div class="booking-card">'+
+    '<div class="booking-header">'+
+      '<span class="stu-badge">'+x(b.studentName)+'</span>'+
+      '<span class="booking-status '+(b.status==='confirmed'?'st-ok':'st-warn')+'">'+(b.status==='confirmed'?'Confermata':'Da riprogrammare')+'</span>'+
+    '</div>'+
+    '<div class="booking-info">'+
+      'Data: <strong>'+fd(b.date)+'</strong> &middot; '+b.time+' &middot; '+b.duration+' min'+
+      (b.meetLink?' &middot; <a href="'+b.meetLink+'" target="_blank" class="meet-link">Google Meet</a>':'')+
+    '</div>'+
+    (b.notes?'<div class="booking-notes">'+x(b.notes)+'</div>':'')+
+    '<div class="booking-actions">'+
+      '<button class="btn btn-d btn-sm" onclick="rescheduleBooking(''+b.id+'')">Riprogramma</button>'+
+      '<button class="btn btn-g btn-sm" onclick="showBookingInfo(''+b.id+'')">Dettagli</button>'+
+    '</div>'+
+  '</div>').join('');
+}
+
+async function rescheduleBooking(id){
+  if(!confirm('Segnare questa prenotazione come "da riprogrammare"?\nPotrai accordarti con lo studente tramite i canali RCB Academy.')) return;
+  try {
+    await db.collection('bookings').doc(id).update({status:'reschedule_requested'});
+    toast('Prenotazione segnata come da riprogrammare.','s');
+    await loadCalData();
+  } catch(e){ toast('Errore.','e'); }
+}
+
+/* ── MODAL AGGIUNGI ───────────────────────────────── */
+function openAddBooking(){
+  document.getElementById('modalAddBooking').style.display='flex';
+  document.getElementById('abDate').value=new Date().toISOString().split('T')[0];
+  document.getElementById('abStu').value='';
+  document.getElementById('abTime').value='';
+  document.getElementById('abDuration').value='60';
+  document.getElementById('abMeet').value=calData.settings.meetLink||'';
+  document.getElementById('abNotes').value='';
+  document.getElementById('abStuSug').style.display='none';
+}
+function closeAddBooking(){
+  document.getElementById('modalAddBooking').style.display='none';
+}
+
+function onAbStuInput(){
+  const val=document.getElementById('abStu').value.trim();
+  const sug=document.getElementById('abStuSug');
+  if(!val){ sug.style.display='none'; return; }
+  const matches=myStudents.filter(s=>s.toLowerCase().startsWith(val.toLowerCase()));
+  if(matches.length){
+    sug.innerHTML=matches.map(m=>'<div class="stu-sug-item" onmousedown="document.getElementById('abStu').value=''+x(m)+'';document.getElementById('abStuSug').style.display='none'">'+x(m)+'</div>').join('');
+    if(!matches.some(m=>m.toLowerCase()===val.toLowerCase())&&!val.includes('#')){
+      sug.innerHTML+='<div class="stu-sug-item stu-sug-new" onmousedown="document.getElementById('abStu').value=''+x(val)+'';document.getElementById('abStuSug').style.display='none'">Nuovo: '+x(val)+'</div>';
+    }
+    sug.style.display='block';
+  } else { sug.style.display='none'; }
+}
+
+async function saveManualBooking(){
+  const date=document.getElementById('abDate').value;
+  const stuRaw=document.getElementById('abStu').value.trim();
+  const time=document.getElementById('abTime').value;
+  const duration=parseInt(document.getElementById('abDuration').value);
+  const meetLink=document.getElementById('abMeet').value.trim();
+  const notes=document.getElementById('abNotes').value.trim();
+  if(!date||!stuRaw||!time||!duration){ toast('Compila data, studente, ora e durata.','e'); return; }
+  const btn=document.getElementById('abSaveBtn');
+  btn.disabled=true; btn.textContent='Salvataggio...';
+  try {
+    const studentName=stuRaw.includes('#')?stuRaw:await resolveStudentName(stuRaw);
+    const booking={
+      tutorId:me.uid, studentName, date, time, duration,
+      meetLink:meetLink||null, notes:notes||null,
+      status:'confirmed', manual:true,
+      createdAt:firebase.firestore.FieldValue.serverTimestamp()
+    };
+    await db.collection('bookings').add(booking);
+    await sendBookingEmail({
+      tutorEmail:me.email,
+      tutorName:profilo?.nome||nomeDaEmail(me.email),
+      studentName, date:fd(date), time, duration,
+      meetLink:meetLink||'Non impostato', manual:true
+    });
+    toast('Appuntamento salvato ✅','s');
+    closeAddBooking();
+    await loadCalData();
+  } catch(e){
+    console.error('[RCB] Booking:',e);
+    toast('Errore nel salvataggio.','e');
+  } finally { btn.disabled=false; btn.textContent='Salva appuntamento'; }
+}
+
+/* ── RESEND EMAIL ─────────────────────────────────── */
+async function sendBookingEmail({tutorEmail,tutorName,studentName,date,time,duration,meetLink,manual}){
+  const RESEND_KEY='INSERISCI_RESEND_API_KEY'; // re_p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCopiR2CfJEAibTLFvE0Spg328kABx5srY3S4Y1cTaQw9f+LkqN+BmVzigN0dbApaB0pQ5+tbWlfL1gCkGSkUyNfpwpo74YSo8Y8rAjSEu00HzaStUhLl6P51d4vjrVFnN8a5Zl9ZCqk06cQ8XgHkT0KeZQM+yA75Rgkf21mJqq+QIDAQAB
+  if(RESEND_KEY.startsWith('INSERISCI')){ console.warn('[RCB] Resend key not set'); return; }
+  const subject=manual
+    ?'RCB Academy - Appuntamento aggiunto: '+studentName+' il '+date
+    :'RCB Academy - Nuova prenotazione: '+studentName+' il '+date;
+  const html='<div style="font-family:Arial,sans-serif;max-width:540px;margin:0 auto;background:#fff;border-radius:12px;border:1px solid #e8ecf4;overflow:hidden">'
+    +'<div style="background:#161a38;padding:20px;text-align:center"><span style="font-size:20px;color:#fff;font-family:Georgia,serif">RCB <em style="color:#00bbff">Academy</em></span></div>'
+    +'<div style="padding:24px">'
+    +'<p style="color:#1f244a;margin-bottom:16px">Ciao <strong>'+tutorName+'</strong>,</p>'
+    +'<p style="color:#555;margin-bottom:20px">'+(manual?'Hai aggiunto un nuovo appuntamento:' :'Hai ricevuto una nuova prenotazione:')+'</p>'
+    +'<table style="width:100%;border-collapse:collapse;background:#f4f6fb;border-radius:8px;margin-bottom:20px">'
+    +'<tr><td style="padding:9px 14px;font-size:11px;font-weight:700;color:#7a82a8;text-transform:uppercase;width:100px">Studente</td><td style="padding:9px 14px;font-weight:600;color:#1f244a">'+studentName+'</td></tr>'
+    +'<tr style="border-top:1px solid #e8ecf4"><td style="padding:9px 14px;font-size:11px;font-weight:700;color:#7a82a8;text-transform:uppercase">Data</td><td style="padding:9px 14px;color:#1f244a">'+date+'</td></tr>'
+    +'<tr style="border-top:1px solid #e8ecf4"><td style="padding:9px 14px;font-size:11px;font-weight:700;color:#7a82a8;text-transform:uppercase">Ora</td><td style="padding:9px 14px;color:#1f244a">'+time+'</td></tr>'
+    +'<tr style="border-top:1px solid #e8ecf4"><td style="padding:9px 14px;font-size:11px;font-weight:700;color:#7a82a8;text-transform:uppercase">Durata</td><td style="padding:9px 14px;color:#1f244a">'+duration+' minuti</td></tr>'
+    +'<tr style="border-top:1px solid #e8ecf4"><td style="padding:9px 14px;font-size:11px;font-weight:700;color:#7a82a8;text-transform:uppercase">Meet</td><td style="padding:9px 14px"><a href="'+meetLink+'" style="color:#00bbff">'+meetLink+'</a></td></tr>'
+    +'</table>'
+    +'<p style="font-size:11px;color:#7a82a8;border-top:1px solid #e8ecf4;padding-top:14px">Gestisci dalla <a href="https://rcbacademy.com/log-in-tutor" style="color:#00bbff">dashboard tutor RCB Academy</a>.</p>'
+    +'</div></div>';
+  try {
+    const res=await fetch('https://api.resend.com/emails',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+RESEND_KEY},
+      body:JSON.stringify({from:'RCB Academy <noreply@rcbacademy.com>',to:[tutorEmail],subject,html})
+    });
+    if(!res.ok){ const e=await res.json(); console.warn('[RCB] Email err:',e); }
+  } catch(e){ console.warn('[RCB] Email non inviata:',e); }
+}
+
+/* ── SALVA IMPOSTAZIONI CAL ───────────────────────── */
+async function saveCalSettings(){
+  const hours=parseInt(document.getElementById('csAdvance').value)||24;
+  const meet=(document.getElementById('csMeet').value||'').trim();
+  calData.settings={minAdvanceHours:hours,meetLink:meet};
+  try {
+    await db.collection('tutors').doc(me.uid).update({calSettings:calData.settings});
+    toast('Impostazioni salvate ✅','s');
+  } catch(e){ toast('Errore.','e'); }
+}
 
 document.getElementById('lEmail').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('lPass').focus()});
 document.getElementById('lPass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
@@ -849,8 +1299,6 @@ service cloud.firestore {
         && request.auth.uid == request.resource.data.tutorID;
     }
 
-    // Registro globale nomi studenti (pseudonimizzati)
-    // Tutti i tutor autenticati possono leggere e incrementare di 1
     match /student_registry/{nameId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null
@@ -861,77 +1309,27 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['count']);
     }
 
+    // Eccezioni calendario (solo il tutor proprietario)
+    match /cal_exceptions/{tutorId}/dates/{dateId} {
+      allow read, write: if request.auth != null
+                         && request.auth.uid == tutorId;
+    }
+
+    // Prenotazioni
+    match /bookings/{bookingId} {
+      // Tutor: legge e modifica solo le sue prenotazioni
+      allow read, update: if request.auth != null
+        && request.auth.uid == resource.data.tutorId;
+      // Creazione: tutor crea appuntamento manuale
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.tutorId;
+      // Delete: solo il tutor proprietario
+      allow delete: if request.auth != null
+        && request.auth.uid == resource.data.tutorId;
+    }
+
     match /{doc=**} {
       allow read, write: if false;
     }
   }
-}
-
-═══════════════════════════════════════════════════════════════════════
- 📊  FIRESTORE — INDICI NECESSARI
-═══════════════════════════════════════════════════════════════════════
-
- registro_ore:
-   tutorID (Ascending) + data (Descending) — indice composito
-
- student_registry:
-   Nessun indice composto necessario (query semplici per docId)
-
-═══════════════════════════════════════════════════════════════════════
- 📋  STRUTTURA FIRESTORE
-═══════════════════════════════════════════════════════════════════════
-
-tutors/{uid}
-  email:        "tutor@email.com"
-  nome:         "Mario Rossi"
-  ruolo:        "tutor"
-  driveFolder:  "https://drive.google.com/drive/folders/XXXXX"
-  createdAt:    Timestamp
-
-registro_ore/{docId}
-  tutorID:       "firebase-uid-tutor"
-  nomeStudente:  "Marco #1"        ← solo nome + numero globale, mai cognome/email
-  data:          "2026-03-15"
-  ore:           1.5
-  materia:       "Matematica"
-  note:          "Equazioni di secondo grado"
-  createdAt:     Timestamp
-  aggiornatoAt:  Timestamp
-
-student_registry/{normalizedName}    ← es. "marco", "sofia", "luca"
-  count:  3                          ← contatore globale cross-tutor
-
-═══════════════════════════════════════════════════════════════════════
- 🌐  HOSTINGER — ISTRUZIONI EMBED
-═══════════════════════════════════════════════════════════════════════
-
- 1. Pubblica questo file su GitHub Pages (vedi guida sotto)
- 2. Nel Website Builder di Hostinger, apri la pagina "Log In Tutor"
- 3. Svuota COMPLETAMENTE il Custom Code widget
- 4. Incolla SOLO questo codice:
-
-<div style="position:fixed;inset:0;z-index:99999;background:#161a38;">
-  <iframe
-    src="https://TUO-USERNAME.github.io/rcb-tutor/"
-    style="width:100%;height:100%;border:none;display:block;"
-    allow="same-origin scripts"
-  ></iframe>
-</div>
-
- IMPORTANTE: position:fixed fa sì che il div copra l'intera finestra
- del browser, inclusa la navbar di Hostinger — è il comportamento
- corretto per una pagina di login a schermo intero.
-
- Se la navbar di Hostinger è importante sulla pagina, usa invece:
-<div style="position:fixed;top:60px;left:0;right:0;bottom:0;z-index:99999;">
-  <iframe src="https://..." style="width:100%;height:100%;border:none;"></iframe>
-</div>
- (sostituisci 60px con l'altezza reale della tua navbar)
-
-═══════════════════════════════════════════════════════════════════════
- 📁  GITHUB PAGES — GUIDA PASSO PASSO
-═══════════════════════════════════════════════════════════════════════
-
- 1. Vai su github.com → crea account gratuito
- 2. "New repository"
 
