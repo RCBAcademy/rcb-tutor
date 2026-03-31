@@ -1175,8 +1175,9 @@ function renderPrenotazioni(){
       '</div>'+
       (b.notes?'<div class="booking-notes">'+x(b.notes)+'</div>':'')+
       '<div class="booking-actions">'+
-        '<button class="btn btn-d btn-sm" data-action="reschedule" data-bid="'+b.id+'">Riprogramma</button>'+
-        '<button class="btn btn-g btn-sm" data-action="detail"    data-bid="'+b.id+'">Dettagli</button>'+
+     '<button class="btn btn-d btn-sm" data-action="reschedule" data-bid="'+b.id+'">Riprogramma</button>'+
+      '<button class="btn btn-g btn-sm" data-action="detail"    data-bid="'+b.id+'">Dettagli</button>'+
+      '<button class="btn btn-d btn-sm" data-action="cancel"    data-bid="'+b.id+'">Annulla lezione</button>'+
       '</div>'+
     '</div>';
   }).join('');
@@ -1186,8 +1187,9 @@ function renderPrenotazioni(){
     if(!btn) return;
     const bid    = btn.dataset.bid;
     const action = btn.dataset.action;
-    if(action==='reschedule') rescheduleBooking(bid);
+   if(action==='reschedule') rescheduleBooking(bid);
     if(action==='detail')     showBookingInfo(bid);
+    if(action==='cancel')     cancelBooking(bid);
   };
 }
 
@@ -1196,6 +1198,7 @@ let rescheduleId = null;
 function rescheduleBooking(id){
   const b = calBookings.find(b => b.id === id);
   if(!b) return;
+  if(!confirm('Hai già confermato con lo studente la riprogrammazione?')) return;
   rescheduleId = id;
   document.getElementById('rsDate').value = b.date;
   document.getElementById('rsTime').value = b.time;
@@ -1207,7 +1210,18 @@ function closeReschedule(){
   rescheduleId = null;
 }
 
-async function confirmReschedule(){
+async function confirmReschedule(){ 
+async function cancelBooking(id){
+  if(!confirm('Sei sicuro di voler annullare questa lezione?\nL\'operazione non è reversibile.')) return;
+  try {
+    await db.collection('bookings').doc(id).update({
+      status: 'cancelled',
+      aggiornatoAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    toast('Lezione annullata.','s');
+    await loadCalData();
+  } catch(e){ toast('Errore nell\'annullamento.','e'); }
+}
   const newDate = document.getElementById('rsDate').value;
   const newTime = document.getElementById('rsTime').value;
   if(!newDate || !newTime){ toast('Inserisci data e ora.','e'); return; }
@@ -1452,4 +1466,5 @@ service cloud.firestore {
     }
   }
 }
+
 
