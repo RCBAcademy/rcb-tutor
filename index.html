@@ -1245,28 +1245,6 @@ async function cancelBooking(id){
     await loadCalData();
   } catch(e){ toast('Errore nell\'annullamento.','e'); }
 }
-const newDate = document.getElementById('rsDate').value;
-  const newTime = document.getElementById('rsTime').value;
-  if(!newDate || !newTime){ toast('Inserisci data e ora.','e'); return; }
-  if(!rescheduleId){ return; }
-  const btn = document.getElementById('rsSaveBtn');
-  btn.disabled = true; btn.textContent = 'Salvataggio...';
-  try {
-    await db.collection('bookings').doc(rescheduleId).update({
-      date: newDate,
-      time: newTime,
-      status: 'confirmed',
-      aggiornatoAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    toast('Appuntamento spostato ✅','s');
-    closeReschedule();
-    await loadCalData();
-  } catch(e){
-    toast('Errore nel salvataggio.','e');
-  } finally {
-    btn.disabled = false; btn.textContent = 'Salva nuova data';
-  }
-}
 
 /* ── MODAL AGGIUNGI ───────────────────────────────── */
 function openAddBooking(){
@@ -1489,3 +1467,4 @@ service cloud.firestore {
     }
   }
 }
+
