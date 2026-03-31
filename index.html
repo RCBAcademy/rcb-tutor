@@ -463,6 +463,24 @@ tr:hover td{background:var(--off)}
           </div>
         </div>
       </div>
+<!-- MODAL RIPROGRAMMA -->
+      <div id="modalReschedule" style="display:none;position:fixed;inset:0;z-index:8888;background:rgba(22,26,56,.65);align-items:center;justify-content:center">
+        <div style="background:#fff;border-radius:16px;padding:1.8rem;width:100%;max-width:420px;box-shadow:var(--sh-lg);margin:1rem">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2rem">
+            <div style="font-size:.95rem;font-weight:700;color:var(--navy)">Riprogramma appuntamento</div>
+            <button onclick="closeReschedule()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--muted);line-height:1">x</button>
+          </div>
+          <p style="font-size:.78rem;color:var(--muted);margin-bottom:1.1rem">Scegli la nuova data e ora per questo appuntamento.</p>
+          <div class="fg2">
+            <div class="fg"><label>Nuova data *</label><input type="date" id="rsDate"></div>
+            <div class="fg"><label>Nuovo orario *</label><input type="time" id="rsTime" step="1800"></div>
+          </div>
+          <div style="display:flex;gap:.7rem;margin-top:.4rem">
+            <button class="btn btn-p" id="rsSaveBtn" onclick="confirmReschedule()">Salva nuova data</button>
+            <button class="btn btn-g" onclick="closeReschedule()">Annulla</button>
+          </div>
+        </div>
+      </div>
 
       <!-- MATERIALI -->
       <div class="view" id="view-materiali">
@@ -1173,13 +1191,44 @@ function renderPrenotazioni(){
   };
 }
 
-async function rescheduleBooking(id){
-  if(!confirm('Segnare questa prenotazione come "da riprogrammare"?\nPotrai accordarti con lo studente tramite i canali RCB Academy.')) return;
+let rescheduleId = null;
+
+function rescheduleBooking(id){
+  const b = calBookings.find(b => b.id === id);
+  if(!b) return;
+  rescheduleId = id;
+  document.getElementById('rsDate').value = b.date;
+  document.getElementById('rsTime').value = b.time;
+  document.getElementById('modalReschedule').style.display = 'flex';
+}
+
+function closeReschedule(){
+  document.getElementById('modalReschedule').style.display = 'none';
+  rescheduleId = null;
+}
+
+async function confirmReschedule(){
+  const newDate = document.getElementById('rsDate').value;
+  const newTime = document.getElementById('rsTime').value;
+  if(!newDate || !newTime){ toast('Inserisci data e ora.','e'); return; }
+  if(!rescheduleId){ return; }
+  const btn = document.getElementById('rsSaveBtn');
+  btn.disabled = true; btn.textContent = 'Salvataggio...';
   try {
-    await db.collection('bookings').doc(id).update({status:'reschedule_requested'});
-    toast('Prenotazione segnata come da riprogrammare.','s');
+    await db.collection('bookings').doc(rescheduleId).update({
+      date: newDate,
+      time: newTime,
+      status: 'confirmed',
+      aggiornatoAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    toast('Appuntamento spostato ✅','s');
+    closeReschedule();
     await loadCalData();
-  } catch(e){ toast('Errore.','e'); }
+  } catch(e){
+    toast('Errore nel salvataggio.','e');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Salva nuova data';
+  }
 }
 
 /* ── MODAL AGGIUNGI ───────────────────────────────── */
@@ -1403,3 +1452,4 @@ service cloud.firestore {
     }
   }
 }
+
