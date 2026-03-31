@@ -399,10 +399,8 @@ tr:hover td{background:var(--off)}
                   <option value="72">72 ore (3 giorni)</option>
                 </select>
               </div>
-              <div class="fg">
-                <label>Link Google Meet predefinito</label>
-                <input type="url" id="csMeet" placeholder="https://meet.google.com/xxx-xxx-xxx">
-              </div>
+       <div class="fg"><label>Materia *</label><input type="text" id="abMateria" placeholder="es. Matematica"></div>
+          <div class="fg"><label>Link Google Meet</label><input type="url" id="abMeet" placeholder="https://meet.google.com/xxx-xxx-xxx"></div>
             </div>
             <button class="btn btn-p btn-sm" onclick="saveCalSettings()">Salva impostazioni</button>
           </div>
@@ -496,13 +494,7 @@ tr:hover td{background:var(--off)}
             <div class="ir"><span class="il">Ruolo</span><span class="iv">Tutor RCB Academy</span></div>
             <div class="ir"><span class="il">Stato</span><span class="iv" style="color:var(--success)">✅ Attivo</span></div>
           </div>
-          <div>
-            <div class="stt-h">Cambia password</div>
-            <div class="fg"><label>Nuova password</label><input type="password" id="nPass" placeholder="Almeno 8 caratteri"></div>
-            <div class="fg"><label>Conferma password</label><input type="password" id="nPassC" placeholder="Ripeti la password"></div>
-            <button class="btn btn-p" onclick="cambiaPass()">Aggiorna password</button>
           </div>
-        </div>
         <div class="card">
           <div class="stt-h">Privacy, GDPR e protezione dati</div>
           <div style="font-size:.78rem;color:var(--muted);line-height:1.7">
@@ -623,25 +615,6 @@ function updateUI(u, p) {
       <svg width="18" height="18" viewBox="0 0 87.3 78" fill="currentColor"><path d="M6.6 66.85l3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8H0c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/><path d="M43.65 25L29.9 1.2C28.55 2 27.4 3.1 26.6 4.5L1.2 48.5A9.06 9.06 0 000 53h27.45z" fill="#00ac47"/><path d="M73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5H59.85l5.4 10.4z" fill="#ea4335"/><path d="M43.65 25L57.4 1.2C56.05.45 54.5 0 52.85 0H34.45c-1.65 0-3.2.45-4.55 1.2z" fill="#00832d"/><path d="M59.85 53H27.45L13.7 76.8c1.35.75 2.9 1.2 4.55 1.2h50.8c1.65 0 3.2-.45 4.55-1.2z" fill="#2684fc"/><path d="M73.4 26.5l-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3L43.65 25 59.85 53h27.4c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/></svg>
       Apri cartella Google Drive</button>
       <p style="font-size:.7rem;color:var(--muted);margin-top:.7rem">Si apre in una nuova scheda.</p>`;
-  }
-}
-
-/* ══════════════════════════════════════════════════════
-   CAMBIO PASSWORD
-══════════════════════════════════════════════════════ */
-async function cambiaPass() {
-  const np = document.getElementById('nPass').value;
-  const nc = document.getElementById('nPassC').value;
-  if (!np || np.length < 8) { toast('La password deve essere di almeno 8 caratteri.','e'); return; }
-  if (np !== nc)            { toast('Le password non coincidono.','e'); return; }
-  try {
-    await me.updatePassword(np);
-    document.getElementById('nPass').value = '';
-    document.getElementById('nPassC').value = '';
-    toast('Password aggiornata ✅','s');
-  } catch(e) {
-    if (e.code === 'auth/requires-recent-login') toast('Per sicurezza, esci e rientra prima di cambiare la password.','e');
-    else toast('Errore aggiornamento password.','e');
   }
 }
 
@@ -985,10 +958,11 @@ async function loadCalData(){
     calData.exceptions = {};
     excSnap.docs.forEach(d=>{ calData.exceptions[d.id]=d.data(); });
 
-    const bSnap = await db.collection('bookings')
-      .where('tutorId','==',me.uid)
-      .orderBy('date','asc').get();
-    calBookings = bSnap.docs.map(d=>({id:d.id,...d.data()}));
+ const bSnap = await db.collection('bookings')
+      .where('tutorId','==',me.uid).get();
+    calBookings = bSnap.docs
+      .map(d=>({id:d.id,...d.data()}))
+      .sort((a,b)=>a.date.localeCompare(b.date)||a.time.localeCompare(b.time));
 
     // Restore settings fields
     const s = calData.settings;
@@ -997,7 +971,8 @@ async function loadCalData(){
     const mt = document.getElementById('csMeet');
     if(mt) mt.value = s.meetLink||'';
 
-    switchCalTab(calTabActive);
+switchCalTab(calTabActive);
+    await syncCompletedBookings();
   } catch(e){ console.error('[RCB] CalLoad:',e); }
 }
 
@@ -1215,6 +1190,7 @@ function openAddBooking(){
   document.getElementById('abTime').value='';
   document.getElementById('abDuration').value='60';
   document.getElementById('abMeet').value=calData.settings.meetLink||'';
+  document.getElementById('abMateria').value='';
   document.getElementById('abNotes').value='';
   document.getElementById('abStuSug').style.display='none';
 }
@@ -1259,14 +1235,16 @@ async function saveManualBooking(){
   const time=document.getElementById('abTime').value;
   const duration=parseInt(document.getElementById('abDuration').value);
   const meetLink=document.getElementById('abMeet').value.trim();
+const materia=document.getElementById('abMateria').value.trim();
   const notes=document.getElementById('abNotes').value.trim();
-  if(!date||!stuRaw||!time||!duration){ toast('Compila data, studente, ora e durata.','e'); return; }
+  if(!date||!stuRaw||!time||!duration||!materia){ toast('Compila data, studente, ora, durata e materia.','e'); return; }
   const btn=document.getElementById('abSaveBtn');
   btn.disabled=true; btn.textContent='Salvataggio...';
   try {
     const studentName=stuRaw.includes('#')?stuRaw:await resolveStudentName(stuRaw);
-    const booking={
+  const booking={
       tutorId:me.uid, studentName, date, time, duration,
+      materia:materia||null,
       meetLink:meetLink||null, notes:notes||null,
       status:'confirmed', manual:true,
       createdAt:firebase.firestore.FieldValue.serverTimestamp()
@@ -1327,6 +1305,43 @@ async function saveCalSettings(){
     await db.collection('tutors').doc(me.uid).update({calSettings:calData.settings});
     toast('Impostazioni salvate ✅','s');
   } catch(e){ toast('Errore.','e'); }
+}
+/* ══════════════════════════════════════════════════════
+   SYNC APPUNTAMENTI PASSATI → REGISTRO ORE
+══════════════════════════════════════════════════════ */
+async function syncCompletedBookings() {
+  if(!me) return;
+  const now = new Date();
+  const past = calBookings.filter(b => {
+    if(b.status === 'cancelled') return false;
+    return new Date(b.date + 'T' + b.time + ':00') < now;
+  });
+  if(!past.length) return;
+
+  const regSnap = await db.collection('registro_ore')
+    .where('tutorID','==',me.uid).get();
+  const importati = new Set(
+    regSnap.docs.map(d=>d.data().bookingId).filter(Boolean)
+  );
+
+  for(const b of past) {
+    if(importati.has(b.id)) continue;
+    const ore = (b.duration||60) / 60;
+    const rec = {
+      tutorID: me.uid,
+      nomeStudente: b.studentName,
+      data: b.date,
+      ore: ore,
+      materia: b.materia || '(da completare)',
+      note: 'Importato da appuntamento. Modifica se necessario.',
+      bookingId: b.id,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      aggiornatoAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    await db.collection('registro_ore').add(rec);
+    toast(`✅ Lezione del ${fd(b.date)} con ${b.studentName} aggiunta al registro.`,'s');
+  }
+  await loadLezioni();
 }
 
 document.getElementById('lEmail').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('lPass').focus()});
