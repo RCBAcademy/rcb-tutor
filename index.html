@@ -1245,17 +1245,7 @@ async function cancelBooking(id){
     await loadCalData();
   } catch(e){ toast('Errore nell\'annullamento.','e'); }
 }
-  if(!confirm('Sei sicuro di voler annullare questa lezione?\nL\'operazione non è reversibile.')) return;
-  try {
-    await db.collection('bookings').doc(id).update({
-      status: 'cancelled',
-      aggiornatoAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    toast('Lezione annullata.','s');
-    await loadCalData();
-  } catch(e){ toast('Errore nell\'annullamento.','e'); }
-}
-  const newDate = document.getElementById('rsDate').value;
+const newDate = document.getElementById('rsDate').value;
   const newTime = document.getElementById('rsTime').value;
   if(!newDate || !newTime){ toast('Inserisci data e ora.','e'); return; }
   if(!rescheduleId){ return; }
@@ -1499,4 +1489,3 @@ service cloud.firestore {
     }
   }
 }
-
