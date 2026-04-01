@@ -568,13 +568,7 @@ tr:hover td{background:var(--off)}
            <div class="ir"><span class="il">Ruolo</span><span class="iv">Tutor RCB Academy</span></div>
            <div class="ir"><span class="il">Stato</span><span class="iv" style="color:var(--success)">✅ Attivo</span></div>
          </div>
-         <div>
-           <div class="stt-h">Cambia password</div>
-           <div class="fg"><label>Nuova password</label><input type="password" id="nPass" placeholder="Almeno 8 caratteri"></div>
-           <div class="fg"><label>Conferma password</label><input type="password" id="nPassC" placeholder="Ripeti la password"></div>
-           <button class="btn btn-p" onclick="cambiaPass()">Aggiorna password</button>
-         </div>
-       </div>
+        </div>
        <div class="card">
          <div class="stt-h">Privacy, GDPR e protezione dati</div>
          <div style="font-size:.78rem;color:var(--muted);line-height:1.7">
@@ -697,26 +691,7 @@ function updateUI(u, p) {
      <p style="font-size:.7rem;color:var(--muted);margin-top:.7rem">Si apre in una nuova scheda.</p>`;
  }
 }
- 
-/* ══════════════════════════════════════════════════════
-  CAMBIO PASSWORD
-══════════════════════════════════════════════════════ */
-async function cambiaPass() {
- const np = document.getElementById('nPass').value;
- const nc = document.getElementById('nPassC').value;
- if (!np || np.length < 8) { toast('La password deve essere di almeno 8 caratteri.','e'); return; }
- if (np !== nc)            { toast('Le password non coincidono.','e'); return; }
- try {
-   await me.updatePassword(np);
-   document.getElementById('nPass').value = '';
-   document.getElementById('nPassC').value = '';
-   toast('Password aggiornata ✅','s');
- } catch(e) {
-   if (e.code === 'auth/requires-recent-login') toast('Per sicurezza, esci e rientra prima di cambiare la password.','e');
-   else toast('Errore aggiornamento password.','e');
- }
-}
- 
+  
 /* ══════════════════════════════════════════════════════
   CARICA LEZIONI
 ══════════════════════════════════════════════════════ */
