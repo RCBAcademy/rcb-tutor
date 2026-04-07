@@ -1,0 +1,1405 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RCB Academy — Area Studenti</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&family=Fraunces:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<style>
+:root{
+  --navy:#1f244a;--navy-dark:#161a38;--navy-mid:#2a3060;
+  --sky:#00bbff;--sky-dim:rgba(0,187,255,.15);--sky-glow:rgba(0,187,255,.07);
+  --accent:#e10067;--accent-dim:rgba(225,0,103,.12);--accent-glow:rgba(225,0,103,.07);
+  --white:#fff;--off:#f4f6fb;--border:#e8ecf4;--text:#1f244a;--muted:#7a82a8;
+  --danger:#e05252;--success:#22c88a;--warn:#f0a030;
+  --sb-w:240px;--r:12px;--sh:0 2px 12px rgba(31,36,74,.08);--sh-lg:0 8px 32px rgba(31,36,74,.14)
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'Lexend',sans-serif;font-size:14px;color:var(--text);background:var(--off)}
+.screen{display:none}.screen.active{display:flex}
+
+/* LOADER */
+#loader{position:fixed;inset:0;background:var(--navy-dark);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:1rem;z-index:9999}
+#loader .brand{font-family:'Fraunces',serif;font-size:1.8rem;font-weight:600;color:#fff}
+#loader .brand em{color:var(--accent);font-style:italic}
+#loader small{color:rgba(255,255,255,.3);font-size:.75rem;margin-top:.3rem}
+.spin{display:inline-block;width:22px;height:22px;border:2px solid rgba(225,0,103,.3);border-top-color:var(--accent);border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* LOGIN */
+#loginScreen{min-height:100vh;align-items:center;justify-content:center;background:var(--navy-dark);position:relative;overflow:hidden}
+#loginScreen::before{content:'';position:absolute;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(225,0,103,.1) 0%,transparent 70%);top:-200px;right:-150px;pointer-events:none}
+#loginScreen::after{content:'';position:absolute;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(0,187,255,.07) 0%,transparent 70%);bottom:-150px;left:-100px;pointer-events:none}
+.login-card{width:100%;max-width:400px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:2.8rem 2.4rem;backdrop-filter:blur(12px);position:relative;z-index:1}
+.login-logo{text-align:center;margin-bottom:2rem}
+.login-logo .brand{font-family:'Fraunces',serif;font-size:1.9rem;font-weight:600;color:#fff}
+.login-logo .brand em{color:var(--accent);font-style:italic}
+.login-logo sub{display:block;font-size:.7rem;color:rgba(255,255,255,.35);letter-spacing:1px;text-transform:uppercase;margin-top:.3rem}
+.login-badge{display:inline-flex;align-items:center;gap:.4rem;background:var(--accent-dim);border:1px solid rgba(225,0,103,.25);border-radius:20px;padding:.25rem .75rem;font-size:.65rem;font-weight:700;color:var(--accent);letter-spacing:.5px;text-transform:uppercase;margin-bottom:1.3rem}
+.login-h{font-size:1.05rem;font-weight:600;color:#fff;margin-bottom:.25rem}
+.login-s{font-size:.78rem;color:rgba(255,255,255,.4);margin-bottom:1.8rem}
+.lf{margin-bottom:1rem}
+.lf label{display:block;font-size:.7rem;font-weight:600;color:rgba(255,255,255,.5);letter-spacing:.5px;text-transform:uppercase;margin-bottom:.35rem}
+.lf input{width:100%;padding:.72rem 1rem;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:var(--r);font-family:'Lexend',sans-serif;font-size:.88rem;color:#fff;outline:none;transition:border .2s,background .2s}
+.lf input::placeholder{color:rgba(255,255,255,.22)}
+.lf input:focus{border-color:var(--accent);background:rgba(225,0,103,.06)}
+.login-err{display:none;background:rgba(224,82,82,.15);border:1px solid rgba(224,82,82,.35);border-radius:8px;padding:.6rem .9rem;font-size:.78rem;color:#ff9a9a;margin-bottom:.9rem}
+.btn-login{width:100%;padding:.85rem;background:linear-gradient(135deg,var(--accent) 0%,#b3004f 100%);color:#fff;font-family:'Lexend',sans-serif;font-size:.9rem;font-weight:700;border:none;border-radius:var(--r);cursor:pointer;transition:all .2s;box-shadow:0 4px 20px rgba(225,0,103,.3)}
+.btn-login:hover{transform:translateY(-1px);box-shadow:0 6px 28px rgba(225,0,103,.45)}
+.btn-login:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.login-foot{text-align:center;margin-top:1.4rem;font-size:.7rem;color:rgba(255,255,255,.22)}
+.login-foot a{color:var(--sky)}
+
+/* DASHBOARD LAYOUT */
+#dashScreen{height:100vh;overflow:hidden}
+.sidebar{width:var(--sb-w);min-width:var(--sb-w);height:100vh;background:var(--navy-dark);display:flex;flex-direction:column;overflow:hidden;position:relative}
+.sidebar::after{content:'';position:absolute;bottom:0;left:0;right:0;height:180px;background:radial-gradient(ellipse at bottom left,rgba(225,0,103,.07) 0%,transparent 70%);pointer-events:none}
+.sb-top{padding:1.5rem 1.4rem 1rem;border-bottom:1px solid rgba(255,255,255,.06)}
+.sb-brand{font-family:'Fraunces',serif;font-size:1.2rem;font-weight:600;color:#fff}
+.sb-brand em{color:var(--accent);font-style:italic}
+.sb-role{font-size:.62rem;color:rgba(255,255,255,.28);letter-spacing:1px;text-transform:uppercase;margin-top:.2rem}
+.sb-prof{padding:.9rem 1.4rem;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;gap:.65rem}
+.sb-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--accent) 0%,#8b0040 100%);display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:700;color:#fff;flex-shrink:0}
+.sb-pn{font-size:.78rem;font-weight:600;color:#fff;line-height:1.2}
+.sb-pe{font-size:.63rem;color:rgba(255,255,255,.32)}
+.sb-nav{flex:1;padding:.8rem 0;overflow-y:auto}
+.sb-sec{font-size:.58rem;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:rgba(255,255,255,.18);padding:.55rem 1.4rem .25rem}
+.ni{display:flex;align-items:center;gap:.65rem;padding:.62rem 1.4rem;cursor:pointer;transition:all .15s;border-left:3px solid transparent;font-size:.82rem;font-weight:400;color:rgba(255,255,255,.45)}
+.ni:hover{background:rgba(255,255,255,.04);color:rgba(255,255,255,.75)}
+.ni.active{border-left-color:var(--accent);background:var(--accent-glow);color:#fff;font-weight:600}
+.ni svg{width:17px;height:17px;flex-shrink:0;opacity:.7}.ni.active svg{opacity:1}
+.sb-foot{padding:.9rem 1.4rem;border-top:1px solid rgba(255,255,255,.06)}
+.btn-out{display:flex;align-items:center;gap:.55rem;padding:.55rem .75rem;border-radius:8px;font-family:'Lexend',sans-serif;font-size:.76rem;font-weight:500;color:rgba(255,255,255,.35);background:none;border:none;cursor:pointer;width:100%;transition:all .15s}
+.btn-out:hover{background:rgba(224,82,82,.1);color:#ff8a8a}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--off)}
+.topbar{height:54px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 1.8rem;flex-shrink:0}
+.topbar-ttl{font-size:.95rem;font-weight:600;color:var(--navy)}
+.topbar-date{font-size:.7rem;color:var(--muted)}
+.content{flex:1;overflow-y:auto;padding:1.6rem}
+.view{display:none}.view.active{display:block}
+
+/* CARDS */
+.card{background:#fff;border-radius:var(--r);border:1px solid var(--border);box-shadow:var(--sh);padding:1.3rem 1.5rem;margin-bottom:1.1rem}
+.card-ttl{font-size:.72rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin-bottom:.9rem}
+
+/* WELCOME */
+.wcard{background:linear-gradient(135deg,var(--navy-dark) 0%,#2d1030 100%);border-radius:16px;padding:1.7rem 1.9rem;color:#fff;margin-bottom:1.3rem;position:relative;overflow:hidden}
+.wcard::after{content:'';position:absolute;right:-40px;top:-40px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(225,0,103,.2) 0%,transparent 70%)}
+.wcard::before{content:'';position:absolute;left:60%;bottom:-30px;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle,rgba(0,187,255,.1) 0%,transparent 70%)}
+.wg{font-size:.72rem;color:rgba(255,255,255,.45);margin-bottom:.25rem}
+.wn{font-size:1.4rem;font-weight:700;color:#fff;margin-bottom:.5rem}
+.wn em{color:var(--accent);font-style:normal}
+.wm{font-size:.72rem;color:rgba(255,255,255,.38)}
+.tutor-chip{display:inline-flex;align-items:center;gap:.4rem;background:rgba(0,187,255,.12);border:1px solid rgba(0,187,255,.2);border-radius:20px;padding:.25rem .75rem;font-size:.7rem;color:var(--sky);margin-top:.6rem}
+
+/* KPI */
+.kgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.3rem}
+.kcard{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:1.1rem 1.3rem;box-shadow:var(--sh);display:flex;align-items:center;gap:.9rem}
+.kico{width:40px;height:40px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+.kico.p{background:var(--accent-dim)}.kico.b{background:var(--sky-dim)}.kico.g{background:rgba(34,200,138,.12)}
+.kv{font-size:1.45rem;font-weight:700;color:var(--navy);line-height:1}
+.kl{font-size:.7rem;color:var(--muted);margin-top:.18rem}
+
+.rh{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.1rem;gap:.8rem}
+.pg-ttl{font-size:1.05rem;font-weight:700;color:var(--navy)}
+.pg-sub{font-size:.75rem;color:var(--muted);margin-top:.1rem}
+
+/* CALENDARIO */
+.cal-tabs{display:flex;background:#fff;border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:1.1rem;box-shadow:var(--sh)}
+.cal-tab{flex:1;padding:.7rem .6rem;text-align:center;font-size:.75rem;font-weight:600;cursor:pointer;color:var(--muted);transition:all .15s;border-right:1px solid var(--border)}
+.cal-tab:last-child{border-right:none}
+.cal-tab.active{background:var(--navy-dark);color:#fff}
+.cal-tab:hover:not(.active){background:var(--off)}
+.cal-table{border-collapse:collapse;min-width:580px;width:100%}
+.cal-time-label{font-size:.63rem;color:var(--muted);padding:.15rem .45rem;text-align:right;white-space:nowrap;width:48px;vertical-align:middle}
+.cal-day-head{text-align:center;font-size:.72rem;font-weight:700;color:var(--navy);padding:.55rem .2rem;border-bottom:2px solid var(--border)}
+.cal-today-head{color:var(--accent) !important}
+.cal-day-num{display:block;font-size:.6rem;font-weight:400;color:var(--muted);margin-top:1px}
+.cal-cell{height:19px;border:1px solid #f0f2f9;vertical-align:middle}
+.cal-avail{background:rgba(225,0,103,.08);border-color:rgba(225,0,103,.2) !important;cursor:pointer}
+.cal-avail:hover{background:rgba(225,0,103,.18) !important}
+.cal-booked-mine{background:rgba(34,200,138,.18);border-color:rgba(34,200,138,.4) !important;cursor:pointer}
+.cal-booked-other{background:#f5f5f5;opacity:.4;cursor:default}
+.cal-past{background:#f9f9f9;opacity:.35;cursor:default}
+.cal-booking-chip{display:block;font-size:.58rem;font-weight:700;color:#0e6644;padding:0 3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.booking-card{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:1rem 1.2rem;margin-bottom:.8rem;box-shadow:var(--sh)}
+.booking-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.45rem}
+.booking-info{font-size:.79rem;color:var(--muted);margin-bottom:.3rem}
+.booking-notes{font-size:.75rem;color:var(--text);background:var(--off);border-radius:6px;padding:.35rem .65rem;margin-bottom:.5rem}
+.booking-status{font-size:.63rem;font-weight:700;padding:.15rem .5rem;border-radius:20px}
+.st-ok{background:rgba(34,200,138,.12);color:#0e6644}
+.st-warn{background:rgba(240,160,48,.12);color:#7a4800}
+.meet-link{color:var(--accent);text-decoration:none;font-weight:600}
+.meet-link:hover{text-decoration:underline}
+.slot-modal-overlay{display:none;position:fixed;inset:0;z-index:8888;background:rgba(22,26,56,.65);align-items:center;justify-content:center}
+
+/* MATERIALI */
+.mat-tabs{display:flex;gap:.5rem;margin-bottom:1.1rem}
+.mat-tab{padding:.52rem 1.1rem;border-radius:8px;font-size:.78rem;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:#fff;color:var(--muted);transition:all .15s}
+.mat-tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.mat-tab:hover:not(.active){border-color:var(--accent);color:var(--accent)}
+.mat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1rem}
+.mat-card{background:#fff;border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh);transition:transform .15s,box-shadow .15s;cursor:pointer}
+.mat-card:hover{transform:translateY(-2px);box-shadow:var(--sh-lg)}
+.mat-thumb{height:110px;display:flex;align-items:center;justify-content:center;font-size:2.5rem;background:linear-gradient(135deg,var(--off) 0%,#e8ecf4 100%)}
+.mat-thumb.drive{background:linear-gradient(135deg,rgba(26,115,232,.08) 0%,rgba(26,115,232,.15) 100%)}
+.mat-thumb.pdf{background:linear-gradient(135deg,rgba(225,0,103,.06) 0%,rgba(225,0,103,.12) 100%)}
+.mat-body{padding:.9rem 1rem}
+.mat-title{font-size:.82rem;font-weight:700;color:var(--navy);margin-bottom:.2rem;line-height:1.3}
+.mat-desc{font-size:.7rem;color:var(--muted);line-height:1.5;margin-bottom:.6rem}
+.mat-badge{display:inline-flex;align-items:center;gap:.25rem;padding:.15rem .5rem;border-radius:20px;font-size:.62rem;font-weight:700}
+.mat-badge.drive{background:rgba(26,115,232,.1);color:#1a73e8}
+.mat-badge.reader{background:var(--accent-dim);color:var(--accent)}
+
+/* E-READER */
+#readerOverlay{display:none;position:fixed;inset:0;z-index:9000;background:var(--navy-dark);flex-direction:column}
+#readerOverlay.open{display:flex}
+.reader-topbar{height:50px;background:rgba(255,255,255,.05);border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:space-between;padding:0 1.2rem;flex-shrink:0}
+.reader-title{font-size:.85rem;font-weight:600;color:#fff}
+.reader-tools{display:flex;align-items:center;gap:.5rem}
+.rtool{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:.35rem .7rem;font-size:.72rem;font-weight:600;color:rgba(255,255,255,.7);cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:.3rem}
+.rtool:hover{background:rgba(255,255,255,.14);color:#fff}
+.rtool.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.reader-body{flex:1;display:flex;overflow:hidden}
+.reader-sidebar{width:220px;background:rgba(255,255,255,.03);border-right:1px solid rgba(255,255,255,.06);padding:1rem;overflow-y:auto;display:flex;flex-direction:column;gap:.6rem}
+.reader-sidebar-ttl{font-size:.65rem;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:.3rem}
+.annot-item{background:rgba(255,255,255,.06);border-radius:8px;padding:.6rem .8rem;font-size:.72rem;color:rgba(255,255,255,.7);cursor:pointer;transition:background .12s;border-left:3px solid transparent}
+.annot-item:hover{background:rgba(255,255,255,.1)}
+.annot-item.highlight{border-left-color:#ffd700}
+.annot-item.note{border-left-color:var(--sky)}
+.annot-item.draw{border-left-color:var(--accent)}
+.annot-page{font-size:.6rem;color:rgba(255,255,255,.3);margin-top:.15rem}
+.reader-main{flex:1;position:relative;overflow:hidden;display:flex;flex-direction:column}
+#pdfCanvas{display:block;margin:0 auto}
+#annotCanvas{position:absolute;top:0;left:50%;transform:translateX(-50%);cursor:crosshair;display:none}
+.reader-nav{height:44px;background:rgba(255,255,255,.03);border-top:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;gap:1rem;flex-shrink:0}
+.rnav-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:.3rem .9rem;font-size:.75rem;font-weight:600;color:rgba(255,255,255,.6);cursor:pointer;transition:all .15s}
+.rnav-btn:hover{background:rgba(255,255,255,.15);color:#fff}
+.rnav-btn:disabled{opacity:.3;cursor:default}
+.page-info{font-size:.75rem;color:rgba(255,255,255,.45)}
+
+/* NOTE MODAL */
+.note-modal{display:none;position:fixed;z-index:9999;background:rgba(22,26,56,.7);inset:0;align-items:center;justify-content:center}
+.note-modal.open{display:flex}
+.note-box{background:#fff;border-radius:14px;padding:1.4rem;width:340px;box-shadow:var(--sh-lg)}
+.note-box h4{font-size:.88rem;font-weight:700;color:var(--navy);margin-bottom:.8rem}
+.note-box textarea{width:100%;padding:.7rem .9rem;border:1.5px solid var(--border);border-radius:8px;font-family:'Lexend',sans-serif;font-size:.82rem;resize:vertical;min-height:90px;outline:none;transition:border .2s}
+.note-box textarea:focus{border-color:var(--accent)}
+.note-box-actions{display:flex;gap:.6rem;margin-top:.8rem}
+
+/* BUTTONS */
+.btn{padding:.58rem 1rem;border-radius:8px;font-family:'Lexend',sans-serif;font-size:.78rem;font-weight:600;cursor:pointer;border:none;transition:all .16s;display:inline-flex;align-items:center;gap:.38rem}
+.btn-p{background:var(--accent);color:#fff;box-shadow:0 2px 8px rgba(225,0,103,.25)}.btn-p:hover{background:#c5005a;transform:translateY(-1px)}
+.btn-sky{background:var(--sky);color:var(--navy-dark)}.btn-sky:hover{background:#00d4ff;transform:translateY(-1px)}
+.btn-g{background:var(--off);color:var(--text);border:1px solid var(--border)}.btn-g:hover{background:var(--border)}
+.btn-d{background:rgba(224,82,82,.1);color:var(--danger);border:1px solid rgba(224,82,82,.2)}.btn-d:hover{background:rgba(224,82,82,.18)}
+.btn-sm{padding:.32rem .65rem;font-size:.7rem}
+
+/* FORM */
+.fg{margin-bottom:.9rem}
+.fg label{display:block;font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin-bottom:.28rem}
+.fg input,.fg select,.fg textarea{width:100%;padding:.62rem .88rem;border:1.5px solid var(--border);border-radius:8px;font-family:'Lexend',sans-serif;font-size:.84rem;color:var(--text);background:#fff;outline:none;transition:border .2s,box-shadow .2s}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(225,0,103,.1)}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+
+/* TOAST */
+.tc{position:fixed;bottom:1.4rem;right:1.4rem;z-index:9999;display:flex;flex-direction:column;gap:.45rem}
+.toast{background:var(--navy-dark);color:#fff;padding:.7rem 1rem;border-radius:10px;font-size:.76rem;font-weight:500;border-left:3px solid var(--accent);box-shadow:var(--sh-lg);animation:ti .25s ease;max-width:280px}
+.toast.s{border-left-color:var(--success)}.toast.e{border-left-color:var(--danger)}
+@keyframes ti{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+.empty{padding:2.5rem;text-align:center;color:var(--muted);font-size:.82rem}
+.empty .big{font-size:1.8rem;margin-bottom:.4rem}
+.badge{display:inline-block;padding:.12rem .5rem;border-radius:20px;font-size:.66rem;font-weight:600}
+
+/* LOADING SPINNER FOR PDF */
+.pdf-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:1rem;color:rgba(255,255,255,.5);font-size:.82rem}
+.pdf-loading .spin{border-color:rgba(225,0,103,.3);border-top-color:var(--accent)}
+
+@media(max-width:768px){.kgrid{grid-template-columns:1fr}.fg2{grid-template-columns:1fr}.sidebar{display:none}}
+</style>
+</head>
+<body>
+
+<div id="loader">
+  <div class="brand">RCB <em>Academy</em></div>
+  <div class="spin"></div>
+  <small>Caricamento area studenti...</small>
+</div>
+
+<div class="tc" id="tc"></div>
+
+<!-- ══════════ LOGIN ══════════ -->
+<div class="screen" id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="brand">RCB <em>Academy</em></div>
+      <sub>Area Riservata Studenti</sub>
+    </div>
+    <div style="text-align:center;margin-bottom:1.3rem">
+      <span class="login-badge">🎓 Studenti</span>
+    </div>
+    <div class="login-h">Accedi alla tua area</div>
+    <div class="login-s">Usa le credenziali fornite da RCB Academy</div>
+    <div class="login-err" id="loginErr"></div>
+    <div class="lf">
+      <label>Email</label>
+      <input type="email" id="lEmail" placeholder="studente@email.com" autocomplete="email">
+    </div>
+    <div class="lf">
+      <label>Password</label>
+      <input type="password" id="lPass" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="btn-login" id="loginBtn" onclick="doLogin()">Accedi</button>
+    <div class="login-foot">Problemi di accesso? Scrivi a <a href="mailto:admin@rcbacademy.com">admin@rcbacademy.com</a></div>
+  </div>
+</div>
+
+<!-- ══════════ DASHBOARD ══════════ -->
+<div class="screen" id="dashScreen">
+
+  <aside class="sidebar">
+    <div class="sb-top">
+      <div class="sb-brand">RCB <em>Academy</em></div>
+      <div class="sb-role">Area Studenti</div>
+    </div>
+    <div class="sb-prof">
+      <div class="sb-av" id="sbAv">S</div>
+      <div>
+        <div class="sb-pn" id="sbName">Studente</div>
+        <div class="sb-pe" id="sbEmail">—</div>
+      </div>
+    </div>
+    <nav class="sb-nav">
+      <div class="sb-sec">Menu</div>
+      <div class="ni active" onclick="sw('home',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Dashboard
+      </div>
+      <div class="ni" onclick="sw('calendario',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Prenota Lezione
+      </div>
+      <div class="ni" onclick="sw('materiali',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+        Materiali
+      </div>
+      <div class="sb-sec" style="margin-top:.4rem">Account</div>
+      <div class="ni" onclick="sw('impostazioni',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        Impostazioni
+      </div>
+    </nav>
+    <div class="sb-foot">
+      <button class="btn-out" onclick="doLogout()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Esci
+      </button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="topbar-ttl" id="tTitle">Dashboard</div>
+      <div class="topbar-date" id="tDate"></div>
+    </div>
+    <div class="content">
+
+      <!-- HOME -->
+      <div class="view active" id="view-home">
+        <div class="wcard">
+          <div class="wg">Benvenuto/a nella tua area personale,</div>
+          <div class="wn">👋 <em id="wName">Studente</em></div>
+          <div class="wm">Gestisci lezioni, materiali e prenotazioni</div>
+          <div id="tutorChipHome"></div>
+        </div>
+        <div class="kgrid">
+          <div class="kcard"><div class="kico p">📅</div><div><div class="kv" id="kPren">0</div><div class="kl">Prossime lezioni</div></div></div>
+          <div class="kcard"><div class="kico b">📚</div><div><div class="kv" id="kMat">0</div><div class="kl">Materiali disponibili</div></div></div>
+          <div class="kcard"><div class="kico g">✅</div><div><div class="kv" id="kLezFatte">0</div><div class="kl">Lezioni completate</div></div></div>
+        </div>
+        <div class="card">
+          <div class="card-ttl">Prossime lezioni prenotate</div>
+          <div id="homeNextLez"><div class="empty"><div class="big">📅</div>Nessuna lezione prenotata. <span style="color:var(--accent);cursor:pointer;font-weight:600" onclick="sw('calendario',document.querySelector('.ni:nth-child(2)'))">Prenota ora →</span></div></div>
+        </div>
+      </div>
+
+      <!-- CALENDARIO -->
+      <div class="view" id="view-calendario">
+        <div class="rh">
+          <div>
+            <div class="pg-ttl">Prenota una Lezione</div>
+            <div class="pg-sub" id="calSub">Seleziona uno slot disponibile per prenotare</div>
+          </div>
+        </div>
+
+        <div class="cal-tabs">
+          <div class="cal-tab active" id="calTab-settimana" onclick="switchCalTab('settimana')">Questa Settimana</div>
+          <div class="cal-tab" id="calTab-prenotazioni" onclick="switchCalTab('prenotazioni')">Le Mie Prenotazioni</div>
+        </div>
+
+        <div id="calPane-settimana">
+          <div class="card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.8rem">
+              <button class="btn btn-g btn-sm" onclick="calWeekOffset--;renderStudentWeek()">← Prec.</button>
+              <div style="font-size:.88rem;font-weight:700;color:var(--navy)" id="weekTitle"></div>
+              <button class="btn btn-g btn-sm" onclick="calWeekOffset++;renderStudentWeek()">Succ. →</button>
+            </div>
+            <div style="display:flex;gap:1rem;flex-wrap:wrap;font-size:.7rem;color:var(--muted);margin-bottom:.8rem">
+              <span style="display:inline-flex;align-items:center;gap:4px"><span style="width:11px;height:11px;background:rgba(225,0,103,.08);border:1px solid rgba(225,0,103,.2);border-radius:2px;display:inline-block"></span>Disponibile — clicca per prenotare</span>
+              <span style="display:inline-flex;align-items:center;gap:4px"><span style="width:11px;height:11px;background:rgba(34,200,138,.18);border-radius:2px;display:inline-block"></span>Già prenotato da te</span>
+              <span style="display:inline-flex;align-items:center;gap:4px"><span style="width:11px;height:11px;background:#f0f2f9;border-radius:2px;display:inline-block"></span>Non disponibile</span>
+            </div>
+            <div style="overflow-x:auto"><div id="weekGrid"></div></div>
+          </div>
+        </div>
+
+        <div id="calPane-prenotazioni" style="display:none">
+          <div id="myBookingsList"></div>
+        </div>
+      </div>
+
+      <!-- MATERIALI -->
+      <div class="view" id="view-materiali">
+        <div class="rh">
+          <div><div class="pg-ttl">Materiali Didattici</div><div class="pg-sub">Accedi ai tuoi materiali di studio</div></div>
+        </div>
+        <div class="mat-tabs">
+          <div class="mat-tab active" onclick="switchMatTab('tutti',this)">Tutti</div>
+          <div class="mat-tab" onclick="switchMatTab('drive',this)">📁 Google Drive</div>
+          <div class="mat-tab" onclick="switchMatTab('reader',this)">📖 E-Reader</div>
+        </div>
+        <div id="matGrid" class="mat-grid"></div>
+      </div>
+
+      <!-- IMPOSTAZIONI -->
+      <div class="view" id="view-impostazioni">
+        <div class="rh"><div><div class="pg-ttl">Impostazioni</div><div class="pg-sub">Informazioni account</div></div></div>
+        <div class="card">
+          <div style="margin-bottom:.8rem;font-size:.86rem;font-weight:700;color:var(--navy);padding-bottom:.45rem;border-bottom:1px solid var(--border)">Profilo studente</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:.65rem 0;border-bottom:1px solid var(--border);font-size:.81rem">
+            <span style="color:var(--muted);font-size:.76rem">Nome</span>
+            <span style="font-weight:500" id="sNome">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:.65rem 0;border-bottom:1px solid var(--border);font-size:.81rem">
+            <span style="color:var(--muted);font-size:.76rem">Email account</span>
+            <span style="font-weight:500" id="sEmail">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:.65rem 0;border-bottom:1px solid var(--border);font-size:.81rem">
+            <span style="color:var(--muted);font-size:.76rem">Tutor assegnato</span>
+            <span style="font-weight:500" id="sTutor">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:.65rem 0;font-size:.81rem">
+            <span style="color:var(--muted);font-size:.76rem">Stato</span>
+            <span style="font-weight:500;color:var(--success)">✅ Attivo</span>
+          </div>
+          <div style="margin-top:1rem;padding:.8rem;background:rgba(225,0,103,.05);border:1px solid rgba(225,0,103,.15);border-radius:8px;font-size:.72rem;color:var(--muted)">
+            🔒 Per modificare nome o password contatta <a href="mailto:admin@rcbacademy.com" style="color:var(--accent)">admin@rcbacademy.com</a>
+          </div>
+        </div>
+        <div class="card">
+          <div style="font-size:.86rem;font-weight:700;color:var(--navy);margin-bottom:.9rem;padding-bottom:.45rem;border-bottom:1px solid var(--border)">Privacy & Dati</div>
+          <div style="font-size:.78rem;color:var(--muted);line-height:1.7">
+            I tuoi dati sono trattati da <strong>PT AITELOR RCB GLOBAL</strong> nel rispetto del GDPR e della Legge indonesiana n. 27/2022 (PDP).<br>
+            Per richieste: <a href="mailto:privacy@rcbacademy.com" style="color:var(--accent)">privacy@rcbacademy.com</a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- ══════════ MODAL PRENOTAZIONE ══════════ -->
+<div id="modalSlot" class="slot-modal-overlay" style="display:none;position:fixed;inset:0;z-index:8888;background:rgba(22,26,56,.7);align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:16px;padding:1.8rem;width:100%;max-width:440px;box-shadow:var(--sh-lg);margin:1rem">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2rem">
+      <div style="font-size:.95rem;font-weight:700;color:var(--navy)">Prenota questo slot</div>
+      <button onclick="closeSlotModal()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--muted);line-height:1">×</button>
+    </div>
+    <div id="slotModalInfo" style="background:var(--off);border-radius:10px;padding:1rem;margin-bottom:1.1rem;font-size:.84rem;color:var(--navy)"></div>
+    <div class="fg">
+      <label>Link Google Meet (opzionale)</label>
+      <input type="url" id="slotMeet" placeholder="https://meet.google.com/xxx-xxx-xxx">
+      <div style="font-size:.68rem;color:var(--muted);margin-top:.25rem">Lascia vuoto per usare il link predefinito del tutor</div>
+    </div>
+    <div class="fg">
+      <label>Note per il tutor</label>
+      <textarea id="slotNotes" placeholder="Argomenti che vuoi trattare, domande..." style="min-height:65px;resize:vertical;width:100%;padding:.62rem .88rem;border:1.5px solid var(--border);border-radius:8px;font-family:'Lexend',sans-serif;font-size:.84rem;color:var(--text);background:#fff;outline:none;transition:border .2s"></textarea>
+    </div>
+    <div style="display:flex;gap:.7rem">
+      <button class="btn btn-p" id="confirmBookBtn" onclick="confirmBooking()">✅ Conferma prenotazione</button>
+      <button class="btn btn-g" onclick="closeSlotModal()">Annulla</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ E-READER ══════════ -->
+<div id="readerOverlay">
+  <div class="reader-topbar">
+    <div class="reader-title" id="readerTitle">Documento</div>
+    <div class="reader-tools">
+      <button class="rtool" id="toolHL" onclick="setTool('highlight')" title="Evidenzia">🖌️ Evidenzia</button>
+      <button class="rtool" id="toolNote" onclick="setTool('note')" title="Aggiungi nota">📝 Nota</button>
+      <button class="rtool" id="toolDraw" onclick="setTool('draw')" title="Disegna">✏️ Disegna</button>
+      <button class="rtool" onclick="setTool('none')" title="Cursore normale" style="font-size:.75rem">↖ Normale</button>
+      <button class="rtool" onclick="closeReader()" style="color:#ff8a8a">✕ Chiudi</button>
+    </div>
+  </div>
+  <div class="reader-body">
+    <div class="reader-sidebar">
+      <div class="reader-sidebar-ttl">Annotazioni</div>
+      <div id="annotList"><div style="font-size:.72rem;color:rgba(255,255,255,.3);text-align:center;margin-top:1rem">Nessuna annotazione.<br>Usa gli strumenti per iniziare.</div></div>
+    </div>
+    <div class="reader-main">
+      <div id="pdfContainer" style="flex:1;overflow:auto;position:relative;display:flex;justify-content:center;align-items:flex-start;padding:1rem">
+        <div id="pdfLoadingMsg" class="pdf-loading"><div class="spin"></div>Caricamento documento...</div>
+        <canvas id="pdfCanvas"></canvas>
+        <canvas id="annotCanvas"></canvas>
+      </div>
+      <div class="reader-nav">
+        <button class="rnav-btn" id="prevPage" onclick="changePage(-1)">← Prec.</button>
+        <span class="page-info" id="pageInfo">Pag. — / —</span>
+        <button class="rnav-btn" id="nextPage" onclick="changePage(1)">Succ. →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NOTE MODAL -->
+<div class="note-modal" id="noteModal">
+  <div class="note-box">
+    <h4>📝 Aggiungi nota</h4>
+    <textarea id="noteText" placeholder="Scrivi la tua nota..."></textarea>
+    <div class="note-box-actions">
+      <button class="btn btn-p btn-sm" onclick="saveNote()">Salva nota</button>
+      <button class="btn btn-g btn-sm" onclick="closeNoteModal()">Annulla</button>
+    </div>
+  </div>
+</div>
+
+<!-- PDF.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+if(window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+</script>
+
+<script>
+/* ══════════════════════════════════════════════
+   FIREBASE CONFIG — stessa del tutor
+══════════════════════════════════════════════ */
+const firebaseConfig = {
+apiKey: "AIzaSyBZalQI1yII4YdBFUUB1CCV8Ool9NFPFu4",
+  authDomain: "rcb-academy.firebaseapp.com",
+  projectId: "rcb-academy",
+  storageBucket: "rcb-academy.firebasestorage.app",
+  messagingSenderId: "422642546033",
+  appId: "1:422642546033:web:41cd1217ef89d9de3f72d0"
+
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db   = firebase.firestore();
+
+/* ── RESEND CONFIG ── */
+const RESEND_KEY  = 'INSERISCI_RESEND_API_KEY'; // es. re_xxxxx
+const ADMIN_EMAIL = 'admin@rcbacademy.com';
+const FROM_EMAIL  = 'RCB Academy <noreply@rcbacademy.com>';
+
+let me         = null;
+let profilo    = null;  // students/{uid} doc
+let tutorProfilo = null;
+let myBookings = [];
+let myMaterials= [];
+let calData    = { availability:{}, settings:{}, exceptions:{} };
+let calWeekOffset = 0;
+let calTabActive  = 'settimana';
+let matTabActive  = 'tutti';
+
+/* booking slot pending confirmation */
+let pendingSlot = null;
+
+const VTITLES = { home:'Dashboard', calendario:'Prenota Lezione', materiali:'Materiali', impostazioni:'Impostazioni' };
+const DAYS_IT  = ['Lun','Mar','Mer','Gio','Ven','Sab','Dom'];
+const SLOTS    = (()=>{ const s=[]; for(let h=7;h<22;h++){s.push(ph(h)+':00');s.push(ph(h)+':30');} return s; })();
+
+/* ══════════════════════════════════════════════
+   AUTH
+══════════════════════════════════════════════ */
+auth.onAuthStateChanged(async u => {
+  document.getElementById('loader').style.display = 'none';
+  if(u) {
+    me = u;
+    const ok = await loadStudentProfile(u);
+    if(!ok) { await auth.signOut(); showScreen('loginScreen'); return; }
+    showScreen('dashScreen');
+    aggData();
+    await Promise.all([loadCalData(), loadMaterials(), loadBookings()]);
+    renderHomeKPI();
+  } else {
+    me=null; profilo=null;
+    showScreen('loginScreen');
+  }
+});
+
+async function doLogin() {
+  const email = document.getElementById('lEmail').value.trim();
+  const pass  = document.getElementById('lPass').value;
+  const btn   = document.getElementById('loginBtn');
+  const err   = document.getElementById('loginErr');
+  err.style.display = 'none';
+  if(!email||!pass){ showErr(err,'Inserisci email e password.'); return; }
+  btn.disabled=true; btn.textContent='Accesso…';
+  try {
+    await auth.signInWithEmailAndPassword(email, pass);
+  } catch(e) {
+    btn.disabled=false; btn.textContent='Accedi';
+    const m = {
+      'auth/user-not-found':    'Nessun account trovato.',
+      'auth/wrong-password':    'Password non corretta.',
+      'auth/invalid-email':     'Email non valida.',
+      'auth/too-many-requests': 'Troppi tentativi. Attendi.',
+      'auth/invalid-credential':'Credenziali non valide.'
+    };
+    showErr(err, m[e.code]||'Errore di accesso.');
+  }
+}
+
+async function doLogout() { await auth.signOut(); toast('Logout effettuato.'); }
+
+/* ══════════════════════════════════════════════
+   PROFILO STUDENTE
+══════════════════════════════════════════════ */
+async function loadStudentProfile(u) {
+  try {
+    const snap = await db.collection('students').doc(u.uid).get();
+    if(!snap.exists) {
+      toast('Account non trovato. Contatta admin@rcbacademy.com','e');
+      return false;
+    }
+    profilo = snap.data();
+    if(!profilo.tutorId) {
+      toast('Nessun tutor assegnato. Contatta admin@rcbacademy.com','e');
+      return false;
+    }
+    // Carica profilo tutor
+    const tSnap = await db.collection('tutors').doc(profilo.tutorId).get();
+    if(tSnap.exists) tutorProfilo = tSnap.data();
+
+    // UI
+    const nome = profilo.nome || nomeDaEmail(u.email);
+    const av   = nome.charAt(0).toUpperCase();
+    document.getElementById('sbAv').textContent    = av;
+    document.getElementById('sbName').textContent  = nome;
+    document.getElementById('sbEmail').textContent = u.email;
+    document.getElementById('wName').textContent   = nome;
+    document.getElementById('sNome').textContent   = nome;
+    document.getElementById('sEmail').textContent  = u.email;
+    const tName = tutorProfilo?.nome || 'Tutor assegnato';
+    document.getElementById('sTutor').textContent  = tName;
+    document.getElementById('calSub').textContent  = 'Tutor: ' + tName + ' — Seleziona uno slot disponibile';
+    document.getElementById('tutorChipHome').innerHTML =
+      `<div class="tutor-chip">👩‍🏫 Tutor: <strong>${x(tName)}</strong></div>`;
+    return true;
+  } catch(e) { console.error('[RCB-S] Profilo:',e); return false; }
+}
+
+/* ══════════════════════════════════════════════
+   CALENDARIO STUDENTE
+══════════════════════════════════════════════ */
+async function loadCalData() {
+  if(!me||!profilo?.tutorId) return;
+  try {
+    const tSnap = await db.collection('tutors').doc(profilo.tutorId).get();
+    if(tSnap.exists) {
+      const td = tSnap.data();
+      calData.availability = td.availability || {};
+      calData.settings     = td.calSettings  || {minAdvanceHours:24, meetLink:''};
+    }
+    const excSnap = await db.collection('cal_exceptions').doc(profilo.tutorId).collection('dates').get();
+    calData.exceptions = {};
+    excSnap.docs.forEach(d=>{ calData.exceptions[d.id]=d.data(); });
+    // Prenotazioni di questo studente
+    const bSnap = await db.collection('bookings')
+      .where('tutorId','==',profilo.tutorId)
+      .get();
+    // Store all bookings (to detect occupancy)
+    calData.allBookings = bSnap.docs.map(d=>({id:d.id,...d.data()}))
+      .filter(b=>b.status!=='cancelled');
+  } catch(e){ console.error('[RCB-S] CalLoad:',e); }
+}
+
+function switchCalTab(tab) {
+  calTabActive = tab;
+  ['settimana','prenotazioni'].forEach(t=>{
+    const tb=document.getElementById('calTab-'+t);
+    const pn=document.getElementById('calPane-'+t);
+    if(tb) tb.classList.toggle('active',t===tab);
+    if(pn) pn.style.display = t===tab?'block':'none';
+  });
+  if(tab==='settimana')    renderStudentWeek();
+  if(tab==='prenotazioni') renderMyBookings();
+}
+
+function renderStudentWeek() {
+  const ws  = getWeekStart(calWeekOffset);
+  const we  = new Date(ws); we.setDate(ws.getDate()+6);
+  const wt  = document.getElementById('weekTitle');
+  if(wt) wt.textContent = ws.getDate()+'/'+ph(ws.getMonth()+1)+' — '+we.getDate()+'/'+ph(we.getMonth()+1)+'/'+we.getFullYear();
+  const grid = document.getElementById('weekGrid');
+  if(!grid) return;
+  const now  = new Date();
+  const minH = calData.settings?.minAdvanceHours||24;
+
+  let html='<table class="cal-table"><thead><tr><th style="width:48px"></th>';
+  for(let d=0;d<7;d++) {
+    const date=new Date(ws); date.setDate(ws.getDate()+d);
+    const today=ds(date)===ds(new Date());
+    html+='<th class="cal-day-head '+(today?'cal-today-head':'')+'">'+DAYS_IT[d]+'<span class="cal-day-num">'+date.getDate()+'/'+ph(date.getMonth()+1)+'</span></th>';
+  }
+  html+='</tr></thead><tbody>';
+
+  SLOTS.forEach(slot=>{
+    const isHour=slot.endsWith(':00');
+    html+='<tr>';
+    html+='<td class="cal-time-label" style="'+(isHour?'font-weight:600;color:var(--text)':'')+'">'+slot+'</td>';
+    for(let d=0;d<7;d++) {
+      const date=new Date(ws); date.setDate(ws.getDate()+d);
+      const dateStr=ds(date);
+      const exc=(calData.exceptions&&calData.exceptions[dateStr])||{blocked:[],extra:[]};
+      const inTpl=(calData.availability[d]||[]).includes(slot);
+      const blocked=(exc.blocked||[]).includes(slot);
+      const extra=(exc.extra||[]).includes(slot);
+      const isAvail=(inTpl&&!blocked)||extra;
+      const slotDt=new Date(dateStr+'T'+slot+':00');
+      const minDt=new Date(now.getTime()+minH*3600000);
+      const isPast=slotDt<minDt;
+
+      // Check bookings
+      const myBook=(calData.allBookings||[]).find(b=>b.date===dateStr&&b.time===slot&&b.studentUid===me.uid);
+      const otherBook=(calData.allBookings||[]).find(b=>b.date===dateStr&&b.time===slot&&b.studentUid!==me.uid);
+
+      let cls='cal-cell';
+      let content='';
+      if(isPast){ cls+=' cal-past'; }
+      else if(myBook){ cls+=' cal-booked-mine'; content='<span class="cal-booking-chip" style="color:#0e6644">✓ Tu</span>'; }
+      else if(otherBook){ cls+=' cal-booked-other'; }
+      else if(isAvail){ cls+=' cal-avail'; }
+
+      html+='<td class="'+cls+'"'
+        +' data-date="'+dateStr+'" data-slot="'+slot+'"'
+        +' data-avail="'+(isAvail&&!isPast&&!myBook&&!otherBook?1:0)+'"'
+        +' data-mybook="'+(myBook?myBook.id:'')+'"'
+        +'>'+content+'</td>';
+    }
+    html+='</tr>';
+  });
+  html+='</tbody></table>';
+  grid.innerHTML=html;
+
+  grid.onclick=function(e){
+    const td=e.target.closest('td');
+    if(!td) return;
+    const mybook=td.dataset.mybook;
+    if(mybook){ showMyBookingDetail(mybook); return; }
+    if(td.dataset.avail!=='1') return;
+    openSlotModal(td.dataset.date, td.dataset.slot);
+  };
+}
+
+/* ── SLOT MODAL ── */
+function openSlotModal(dateStr, slot) {
+  pendingSlot = {date:dateStr, slot};
+  const parts=dateStr.split('-');
+  const label=parts[2]+'/'+parts[1]+'/'+parts[0];
+  document.getElementById('slotModalInfo').innerHTML=
+    '<div style="margin-bottom:.5rem">📅 <strong>Data:</strong> '+label+'</div>'+
+    '<div style="margin-bottom:.5rem">⏰ <strong>Ora:</strong> '+slot+'</div>'+
+    '<div>👩‍🏫 <strong>Tutor:</strong> '+(tutorProfilo?.nome||'Il tuo tutor')+'</div>';
+  document.getElementById('slotMeet').value=calData.settings?.meetLink||'';
+  document.getElementById('slotNotes').value='';
+  document.getElementById('modalSlot').style.display='flex';
+}
+function closeSlotModal() {
+  document.getElementById('modalSlot').style.display='none';
+  pendingSlot=null;
+}
+
+async function confirmBooking() {
+  if(!pendingSlot) return;
+  const {date,slot}=pendingSlot;
+  const meet=document.getElementById('slotMeet').value.trim();
+  const notes=document.getElementById('slotNotes').value.trim();
+  const btn=document.getElementById('confirmBookBtn');
+  btn.disabled=true; btn.textContent='Elaborazione…';
+
+  try {
+    const studentName = profilo.pseudonimo || profilo.nome || nomeDaEmail(me.email);
+    const tutorEmail  = tutorProfilo?.email || null;
+    const tutorName   = tutorProfilo?.nome  || 'Tutor';
+    const studentEmail= me.email;
+    const studentRealName=profilo.nome||nomeDaEmail(me.email);
+
+    const booking = {
+      tutorId:    profilo.tutorId,
+      studentUid: me.uid,
+      studentName,                      // pseudonimo (visibile al tutor)
+      studentRealName,                  // nome reale (interno)
+      studentEmail,
+      date, time:slot, duration:60,
+      meetLink:   meet||calData.settings?.meetLink||null,
+      notes:      notes||null,
+      status:     'confirmed',
+      createdAt:  firebase.firestore.FieldValue.serverTimestamp()
+    };
+    await db.collection('bookings').add(booking);
+
+    // Invia email a tutor, studente e admin
+    const dateLabel=date.split('-').reverse().join('/');
+    await sendBookingEmails({ tutorEmail, tutorName, studentEmail, studentRealName,
+      studentName, date:dateLabel, time:slot, duration:60,
+      meetLink:meet||calData.settings?.meetLink||'Non impostato', notes });
+
+    toast('Prenotazione confermata ✅','s');
+    closeSlotModal();
+    await loadCalData();
+    await loadBookings();
+    renderStudentWeek();
+    renderHomeKPI();
+  } catch(e){
+    console.error('[RCB-S] Booking:',e);
+    toast('Errore nel salvataggio. Riprova.','e');
+  } finally { btn.disabled=false; btn.textContent='✅ Conferma prenotazione'; }
+}
+
+function showMyBookingDetail(id) {
+  const b=(calData.allBookings||[]).find(b=>b.id===id);
+  if(!b) return;
+  const dateLabel=b.date.split('-').reverse().join('/');
+  if(confirm('La tua prenotazione:\n'+dateLabel+' alle '+b.time+'\n\nVuoi cancellarla?')) {
+    cancelBooking(id);
+  }
+}
+
+async function cancelBooking(id) {
+  try {
+    await db.collection('bookings').doc(id).update({status:'cancelled'});
+    toast('Prenotazione cancellata.','s');
+    await loadCalData();
+    await loadBookings();
+    renderStudentWeek();
+    renderHomeKPI();
+  } catch(e){ toast('Errore cancellazione.','e'); }
+}
+
+/* ── LISTA MIE PRENOTAZIONI ── */
+async function loadBookings() {
+  if(!me||!profilo?.tutorId) return;
+  try {
+    const snap = await db.collection('bookings')
+      .where('studentUid','==',me.uid)
+      .get();
+    myBookings = snap.docs.map(d=>({id:d.id,...d.data()}))
+      .filter(b=>b.status!=='cancelled')
+      .sort((a,b)=>a.date.localeCompare(b.date)||a.time.localeCompare(b.time));
+  } catch(e){ console.error('[RCB-S] Bookings:',e); }
+}
+
+function renderMyBookings() {
+  const list=document.getElementById('myBookingsList');
+  if(!list) return;
+  const now=new Date();
+  const future=myBookings.filter(b=>new Date(b.date+'T'+b.time+':00')>=now);
+  if(!future.length){
+    list.innerHTML='<div class="empty"><div class="big">📅</div>Nessuna lezione futura prenotata.</div>';
+    return;
+  }
+  list.innerHTML=future.map(b=>{
+    const dateLabel=b.date.split('-').reverse().join('/');
+    return '<div class="booking-card" style="border-left:3px solid var(--accent)">'
+      +'<div class="booking-header">'
+        +'<span style="font-weight:700;color:var(--navy)">'+dateLabel+' — '+b.time+'</span>'
+        +'<span class="booking-status st-ok">Confermata</span>'
+      +'</div>'
+      +'<div class="booking-info">Durata: '+b.duration+' min'
+        +(b.meetLink?' &middot; <a href="'+b.meetLink+'" target="_blank" class="meet-link">Google Meet</a>':'')
+      +'</div>'
+      +(b.notes?'<div class="booking-notes">📝 '+x(b.notes)+'</div>':'')
+      +'<div style="margin-top:.5rem">'
+        +'<button class="btn btn-d btn-sm" data-action="cancel" data-bid="'+b.id+'">Cancella prenotazione</button>'
+      +'</div>'
+    +'</div>';
+  }).join('');
+  list.onclick=function(e){
+    const btn=e.target.closest('button[data-action]');
+    if(!btn) return;
+    if(btn.dataset.action==='cancel') {
+      if(confirm('Sei sicuro di voler cancellare questa prenotazione?')) cancelBooking(btn.dataset.bid);
+    }
+  };
+}
+
+/* ── HOME KPI ── */
+function renderHomeKPI() {
+  const now=new Date();
+  const future=myBookings.filter(b=>new Date(b.date+'T'+b.time+':00')>=now);
+  const past=myBookings.filter(b=>new Date(b.date+'T'+b.time+':00')<now);
+  document.getElementById('kPren').textContent  = future.length;
+  document.getElementById('kMat').textContent   = myMaterials.length;
+  document.getElementById('kLezFatte').textContent = past.length;
+
+  const homeNext=document.getElementById('homeNextLez');
+  if(!future.length){
+    homeNext.innerHTML='<div class="empty"><div class="big">📅</div>Nessuna lezione futura. <span style="color:var(--accent);cursor:pointer;font-weight:600" onclick="sw(\'calendario\',null)">Prenota ora →</span></div>';
+    return;
+  }
+  homeNext.innerHTML=future.slice(0,3).map(b=>{
+    const dateLabel=b.date.split('-').reverse().join('/');
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:.6rem 0;border-bottom:1px solid var(--border)">'
+      +'<div>'
+        +'<div style="font-size:.82rem;font-weight:600;color:var(--navy)">'+dateLabel+' — '+b.time+'</div>'
+        +(b.meetLink?'<a href="'+b.meetLink+'" target="_blank" class="meet-link" style="font-size:.7rem">Google Meet</a>':'<span style="font-size:.7rem;color:var(--muted)">Nessun link</span>')
+      +'</div>'
+      +'<span style="font-size:.78rem;font-weight:700;color:var(--success)">✅ Confermata</span>'
+    +'</div>';
+  }).join('');
+}
+
+/* ══════════════════════════════════════════════
+   MATERIALI
+══════════════════════════════════════════════ */
+async function loadMaterials() {
+  if(!me) return;
+  try {
+    const snap = await db.collection('materiali_studenti')
+      .where('studentUids','array-contains',me.uid)
+      .get();
+    // Also load materials assigned to all students or to this tutorId
+    const snap2 = await db.collection('materiali_studenti')
+      .where('tutorId','==', profilo?.tutorId||'__none__')
+      .where('visibileATutti','==',true)
+      .get();
+    const combined = [...snap.docs, ...snap2.docs];
+    const seen=new Set();
+    myMaterials=combined.map(d=>({id:d.id,...d.data()}))
+      .filter(m=>{ if(seen.has(m.id)) return false; seen.add(m.id); return true; });
+  } catch(e){ console.error('[RCB-S] Materials:',e); }
+}
+
+function switchMatTab(tab,el) {
+  matTabActive=tab;
+  document.querySelectorAll('.mat-tab').forEach(t=>t.classList.remove('active'));
+  if(el) el.classList.add('active');
+  renderMaterials();
+}
+
+function renderMaterials() {
+  const grid=document.getElementById('matGrid');
+  if(!grid) return;
+  let mats=myMaterials;
+  if(matTabActive==='drive') mats=mats.filter(m=>m.tipo==='drive');
+  if(matTabActive==='reader') mats=mats.filter(m=>m.tipo==='reader');
+  if(!mats.length){
+    grid.innerHTML='<div class="empty" style="grid-column:1/-1"><div class="big">📚</div>Nessun materiale disponibile.</div>';
+    return;
+  }
+  grid.innerHTML=mats.map(m=>{
+    const isDrive=m.tipo==='drive';
+    return '<div class="mat-card" data-mid="'+m.id+'" data-tipo="'+m.tipo+'" data-link="'+x(m.link||'')+'" data-title="'+x(m.titolo)+'">'
+      +'<div class="mat-thumb '+(isDrive?'drive':'pdf')+'">'+( isDrive?'📁':'📖')+'</div>'
+      +'<div class="mat-body">'
+        +'<div class="mat-title">'+x(m.titolo)+'</div>'
+        +'<div class="mat-desc">'+x(m.descrizione||'')+'</div>'
+        +'<span class="mat-badge '+(isDrive?'drive':'reader')+'">'+( isDrive?'📁 Google Drive':'📖 E-Reader')+'</span>'
+      +'</div>'
+    +'</div>';
+  }).join('');
+  grid.onclick=function(e){
+    const card=e.target.closest('.mat-card');
+    if(!card) return;
+    const tipo=card.dataset.tipo;
+    const link=card.dataset.link;
+    const title=card.dataset.title;
+    const mid=card.dataset.mid;
+    if(tipo==='drive') { window.open(link,'_blank'); }
+    else { openReader(link, title, mid); }
+  };
+}
+
+/* ══════════════════════════════════════════════
+   E-READER + ANNOTAZIONI
+══════════════════════════════════════════════ */
+let pdfDoc=null, pdfPage=1, pdfTotal=0;
+let currentTool='none';
+let currentMaterialId=null;
+let annotations=[];    // {id, page, type, data, text, createdAt}
+let isDrawing=false;
+let drawPath=[];
+let notePosition=null; // {x,y} for note placement
+
+async function openReader(pdfUrl, title, materialId) {
+  if(!pdfUrl){ toast('Nessun PDF associato a questo materiale.','e'); return; }
+  currentMaterialId=materialId;
+  pdfPage=1;
+  annotations=[];
+  document.getElementById('readerTitle').textContent=title;
+  document.getElementById('readerOverlay').classList.add('open');
+  document.getElementById('pdfLoadingMsg').style.display='flex';
+  document.getElementById('pdfCanvas').style.display='none';
+  document.getElementById('annotCanvas').style.display='none';
+  setTool('none');
+
+  // Carica annotazioni da Firestore
+  await loadAnnotations(materialId);
+
+  // Carica PDF
+  try {
+    // Convert Google Drive share link to direct embed link if needed
+    let url=pdfUrl;
+    const driveMatch=pdfUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if(driveMatch) {
+      url=`https://drive.google.com/uc?export=download&id=${driveMatch[1]}`;
+    }
+    const loadingTask=pdfjsLib.getDocument({url, withCredentials:false});
+    pdfDoc=await loadingTask.promise;
+    pdfTotal=pdfDoc.numPages;
+    document.getElementById('pdfLoadingMsg').style.display='none';
+    document.getElementById('pdfCanvas').style.display='block';
+    await renderPdfPage(pdfPage);
+  } catch(e) {
+    console.error('[RCB-S] PDF:',e);
+    document.getElementById('pdfLoadingMsg').innerHTML='<div style="color:#ff8a8a">❌ Impossibile caricare il PDF.<br><span style="font-size:.7rem">Verifica il link o le autorizzazioni Google Drive.</span></div>';
+  }
+}
+
+async function renderPdfPage(num) {
+  if(!pdfDoc) return;
+  const page=await pdfDoc.getPage(num);
+  const canvas=document.getElementById('pdfCanvas');
+  const annotCv=document.getElementById('annotCanvas');
+  const container=document.getElementById('pdfContainer');
+  const maxW=container.clientWidth-40;
+  const viewport=page.getViewport({scale:1});
+  const scale=Math.min(maxW/viewport.width, 1.5);
+  const vp=page.getViewport({scale});
+  canvas.width=vp.width; canvas.height=vp.height;
+  annotCv.width=vp.width; annotCv.height=vp.height;
+  annotCv.style.left='50%'; annotCv.style.top=canvas.offsetTop+'px';
+  const ctx=canvas.getContext('2d');
+  await page.render({canvasContext:ctx, viewport:vp}).promise;
+  document.getElementById('pageInfo').textContent='Pag. '+num+' / '+pdfTotal;
+  document.getElementById('prevPage').disabled=num<=1;
+  document.getElementById('nextPage').disabled=num>=pdfTotal;
+  renderAnnotationsOnCanvas(num);
+  renderAnnotList();
+}
+
+async function changePage(delta) {
+  const newPage=pdfPage+delta;
+  if(newPage<1||newPage>pdfTotal) return;
+  pdfPage=newPage;
+  await renderPdfPage(pdfPage);
+}
+
+function closeReader() {
+  document.getElementById('readerOverlay').classList.remove('open');
+  pdfDoc=null; pdfPage=1; pdfTotal=0; currentMaterialId=null; annotations=[];
+  setTool('none');
+}
+
+/* ── TOOLS ── */
+function setTool(tool) {
+  currentTool=tool;
+  const annotCv=document.getElementById('annotCanvas');
+  ['toolHL','toolNote','toolDraw'].forEach(id=>{
+    document.getElementById(id).classList.remove('active');
+  });
+  if(tool==='highlight'){ document.getElementById('toolHL').classList.add('active'); annotCv.style.display='block'; annotCv.style.cursor='crosshair'; }
+  else if(tool==='note'){  document.getElementById('toolNote').classList.add('active'); annotCv.style.display='block'; annotCv.style.cursor='cell'; }
+  else if(tool==='draw'){  document.getElementById('toolDraw').classList.add('active'); annotCv.style.display='block'; annotCv.style.cursor='url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'20\' height=\'20\'><text y=\'16\'>✏️</text></svg>") 0 16, crosshair'; }
+  else { annotCv.style.display='none'; annotCv.style.cursor='default'; }
+
+  // Setup events
+  const cv=document.getElementById('annotCanvas');
+  cv.onmousedown=cv.ontouchstart=null;
+  cv.onmousemove=cv.ontouchmove=null;
+  cv.onmouseup=cv.ontouchend=null;
+  cv.onclick=null;
+
+  if(tool==='draw'){
+    cv.onmousedown=startDraw;
+    cv.onmousemove=continueDraw;
+    cv.onmouseup=endDraw;
+  } else if(tool==='highlight'){
+    cv.onmousedown=startHighlight;
+    cv.onmouseup=endHighlight;
+  } else if(tool==='note'){
+    cv.onclick=placeNote;
+  }
+}
+
+/* Highlight */
+let hlStart=null;
+function startHighlight(e){ const pos=getPos(e); hlStart=pos; }
+function endHighlight(e){
+  if(!hlStart) return;
+  const pos=getPos(e);
+  const x=Math.min(hlStart.x,pos.x), y=Math.min(hlStart.y,pos.y);
+  const w=Math.abs(pos.x-hlStart.x), h=Math.abs(pos.y-hlStart.y);
+  if(w<5||h<5){ hlStart=null; return; }
+  saveAnnotation({type:'highlight', page:pdfPage, data:{x,y,w,h}});
+  hlStart=null;
+}
+
+/* Draw */
+function startDraw(e){ isDrawing=true; drawPath=[getPos(e)]; }
+function continueDraw(e){
+  if(!isDrawing) return;
+  drawPath.push(getPos(e));
+  redrawAnnotCanvas();
+  const cv=document.getElementById('annotCanvas');
+  const ctx=cv.getContext('2d');
+  ctx.strokeStyle='rgba(225,0,103,0.8)';
+  ctx.lineWidth=2; ctx.lineCap='round';
+  ctx.beginPath();
+  if(drawPath.length>1){
+    ctx.moveTo(drawPath[drawPath.length-2].x,drawPath[drawPath.length-2].y);
+    ctx.lineTo(drawPath[drawPath.length-1].x,drawPath[drawPath.length-1].y);
+    ctx.stroke();
+  }
+}
+function endDraw(e){
+  if(!isDrawing||drawPath.length<2) { isDrawing=false; drawPath=[]; return; }
+  isDrawing=false;
+  saveAnnotation({type:'draw', page:pdfPage, data:{path:[...drawPath]}});
+  drawPath=[];
+}
+
+/* Note */
+function placeNote(e){
+  notePosition=getPos(e);
+  document.getElementById('noteText').value='';
+  document.getElementById('noteModal').classList.add('open');
+}
+function closeNoteModal(){ document.getElementById('noteModal').classList.remove('open'); notePosition=null; }
+function saveNote(){
+  const text=document.getElementById('noteText').value.trim();
+  if(!text){ toast('Scrivi qualcosa prima di salvare.','e'); return; }
+  saveAnnotation({type:'note', page:pdfPage, data:{x:notePosition.x,y:notePosition.y}, text});
+  closeNoteModal();
+}
+
+function getPos(e){
+  const cv=document.getElementById('annotCanvas');
+  const rect=cv.getBoundingClientRect();
+  const touch=e.touches&&e.touches[0];
+  const ex=touch?touch.clientX:e.clientX;
+  const ey=touch?touch.clientY:e.clientY;
+  return {x:ex-rect.left, y:ey-rect.top};
+}
+
+/* ── CANVAS RENDER ── */
+function renderAnnotationsOnCanvas(page) {
+  redrawAnnotCanvas();
+}
+
+function redrawAnnotCanvas(){
+  const cv=document.getElementById('annotCanvas');
+  const ctx=cv.getContext('2d');
+  ctx.clearRect(0,0,cv.width,cv.height);
+  annotations.filter(a=>a.page===pdfPage).forEach(a=>{
+    if(a.type==='highlight'){
+      ctx.fillStyle='rgba(255,215,0,0.35)';
+      ctx.fillRect(a.data.x,a.data.y,a.data.w,a.data.h);
+    } else if(a.type==='draw'&&a.data.path&&a.data.path.length>1){
+      ctx.strokeStyle='rgba(225,0,103,0.75)';
+      ctx.lineWidth=2; ctx.lineCap='round';
+      ctx.beginPath();
+      ctx.moveTo(a.data.path[0].x,a.data.path[0].y);
+      a.data.path.slice(1).forEach(p=>ctx.lineTo(p.x,p.y));
+      ctx.stroke();
+    } else if(a.type==='note'){
+      ctx.fillStyle='rgba(0,187,255,0.9)';
+      ctx.beginPath(); ctx.arc(a.data.x,a.data.y,10,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#fff'; ctx.font='bold 12px Lexend,sans-serif';
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText('N',a.data.x,a.data.y);
+      ctx.textAlign='start'; ctx.textBaseline='alphabetic';
+    }
+  });
+}
+
+/* ── ANNOT LIST SIDEBAR ── */
+function renderAnnotList(){
+  const list=document.getElementById('annotList');
+  const pageAnnots=annotations.filter(a=>a.page===pdfPage);
+  if(!pageAnnots.length){
+    list.innerHTML='<div style="font-size:.72rem;color:rgba(255,255,255,.3);text-align:center;margin-top:.5rem">Nessuna annotazione in questa pagina.</div>';
+    return;
+  }
+  list.innerHTML=pageAnnots.map((a,i)=>{
+    const icon=a.type==='highlight'?'🖌️':a.type==='note'?'📝':'✏️';
+    const label=a.type==='note'?a.text:(a.type==='highlight'?'Evidenziatura':'Disegno');
+    return '<div class="annot-item '+a.type+'" data-aidx="'+i+'">'
+      +icon+' <span style="font-weight:600;font-size:.73rem">'+x(label)+'</span>'
+      +'<div class="annot-page">Pag. '+a.page+'</div>'
+      +'<button data-dlidx="'+i+'" style="background:none;border:none;color:rgba(255,100,100,.7);cursor:pointer;font-size:.65rem;margin-top:.15rem">Rimuovi</button>'
+    +'</div>';
+  }).join('');
+  list.onclick=function(e){
+    const btn=e.target.closest('button[data-dlidx]');
+    if(!btn) return;
+    const idx=parseInt(btn.dataset.dlidx);
+    const a=pageAnnots[idx];
+    if(a) deleteAnnotation(a.id||a._tempId);
+  };
+}
+
+/* ── FIRESTORE ANNOTAZIONI ── */
+async function loadAnnotations(materialId) {
+  if(!me||!materialId) return;
+  try {
+    const snap=await db.collection('annotations').doc(me.uid)
+      .collection('materials').doc(materialId)
+      .collection('items').orderBy('createdAt','asc').get();
+    annotations=snap.docs.map(d=>({id:d.id,...d.data()}));
+  } catch(e){ annotations=[]; }
+}
+
+async function saveAnnotation(annot) {
+  if(!me||!currentMaterialId){ toast('Sessione non valida.','e'); return; }
+  const rec={...annot, createdAt:firebase.firestore.FieldValue.serverTimestamp()};
+  try {
+    const ref=await db.collection('annotations').doc(me.uid)
+      .collection('materials').doc(currentMaterialId)
+      .collection('items').add(rec);
+    annotations.push({...annot, id:ref.id});
+    redrawAnnotCanvas();
+    renderAnnotList();
+    toast('Annotazione salvata ✅','s');
+  } catch(e){ toast('Errore salvataggio annotazione.','e'); }
+}
+
+async function deleteAnnotation(id) {
+  if(!id) return;
+  try {
+    await db.collection('annotations').doc(me.uid)
+      .collection('materials').doc(currentMaterialId)
+      .collection('items').doc(id).delete();
+    annotations=annotations.filter(a=>a.id!==id);
+    redrawAnnotCanvas();
+    renderAnnotList();
+    toast('Annotazione rimossa.','s');
+  } catch(e){ toast('Errore rimozione.','e'); }
+}
+
+/* ══════════════════════════════════════════════
+   EMAIL via RESEND
+══════════════════════════════════════════════ */
+async function sendBookingEmails({tutorEmail,tutorName,studentEmail,studentRealName,studentName,date,time,duration,meetLink,notes}){
+  if(RESEND_KEY.startsWith('INSERISCI')){ console.warn('[RCB-S] Resend key non configurata'); return; }
+
+  const tableRows=(rows)=>rows.map(([k,v])=>
+    '<tr style="border-top:1px solid #e8ecf4"><td style="padding:9px 14px;font-size:11px;font-weight:700;color:#7a82a8;text-transform:uppercase;width:110px">'+k+'</td><td style="padding:9px 14px;color:#1f244a">'+v+'</td></tr>'
+  ).join('');
+
+  const header='<div style="background:#161a38;padding:20px;text-align:center"><span style="font-size:20px;color:#fff;font-family:Georgia,serif">RCB <em style="color:#e10067">Academy</em></span></div>';
+  const footer='<p style="font-size:11px;color:#7a82a8;border-top:1px solid #e8ecf4;padding-top:14px;margin-top:20px">Gestisci dalla <a href="https://rcbacademy.com" style="color:#e10067">dashboard RCB Academy</a>.</p>';
+  const detailTable=(meetLink)=>'<table style="width:100%;border-collapse:collapse;background:#f4f6fb;border-radius:8px;margin:16px 0"><tbody>'
+    +tableRows([
+      ['Data',date],['Ora',time],['Durata',duration+' min'],
+      ['Meet','<a href="'+meetLink+'" style="color:#00bbff">'+meetLink+'</a>'],
+      ...(notes?[['Note',notes]]:[])
+    ])
+    +'</tbody></table>';
+
+  const wrap=(body)=>'<div style="font-family:Arial,sans-serif;max-width:540px;margin:0 auto;background:#fff;border-radius:12px;border:1px solid #e8ecf4;overflow:hidden">'+header+'<div style="padding:24px">'+body+footer+'</div></div>';
+
+  const emails=[];
+
+  // Email al TUTOR
+  if(tutorEmail){
+    emails.push({
+      to:[tutorEmail],
+      subject:'RCB Academy — Nuova prenotazione: '+studentName+' il '+date,
+      html:wrap('<p style="color:#1f244a;margin-bottom:16px">Ciao <strong>'+tutorName+'</strong>,</p>'
+        +'<p style="color:#555;margin-bottom:8px">Hai ricevuto una nuova prenotazione da <strong>'+studentName+'</strong>.</p>'
+        +detailTable(meetLink))
+    });
+  }
+
+  // Email allo STUDENTE
+  if(studentEmail){
+    emails.push({
+      to:[studentEmail],
+      subject:'RCB Academy — Prenotazione confermata: '+date+' alle '+time,
+      html:wrap('<p style="color:#1f244a;margin-bottom:16px">Ciao <strong>'+studentRealName+'</strong>,</p>'
+        +'<p style="color:#555;margin-bottom:8px">La tua prenotazione con <strong>'+tutorName+'</strong> è stata confermata!</p>'
+        +detailTable(meetLink))
+    });
+  }
+
+  // Email all'ADMIN
+  emails.push({
+    to:[ADMIN_EMAIL],
+    subject:'RCB Academy — Prenotazione: '+studentRealName+' / '+tutorName+' il '+date,
+    html:wrap('<p style="color:#1f244a;margin-bottom:16px">Nuova prenotazione ricevuta.</p>'
+      +'<table style="width:100%;border-collapse:collapse;background:#f4f6fb;border-radius:8px;margin:16px 0"><tbody>'
+      +tableRows([
+        ['Studente',studentRealName+' ('+studentEmail+')'],
+        ['Pseudonimo',studentName],['Tutor',tutorName],
+        ['Data',date],['Ora',time],['Durata',duration+' min'],
+        ...(notes?[['Note',notes]]:[])
+      ])
+      +'</tbody></table>')
+  });
+
+  for(const em of emails){
+    try {
+      const res=await fetch('https://api.resend.com/emails',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+RESEND_KEY},
+        body:JSON.stringify({from:FROM_EMAIL, to:em.to, subject:em.subject, html:em.html})
+      });
+      if(!res.ok){ const e=await res.json(); console.warn('[RCB-S] Email err:',e); }
+    } catch(e){ console.warn('[RCB-S] Email non inviata:',e); }
+  }
+}
+
+/* ══════════════════════════════════════════════
+   NAVIGAZIONE
+══════════════════════════════════════════════ */
+function sw(id,el) {
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+  if(el) el.classList.add('active');
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+id).classList.add('active');
+  document.getElementById('tTitle').textContent=VTITLES[id]||'';
+  if(id==='calendario') { switchCalTab('settimana'); }
+  if(id==='materiali') renderMaterials();
+}
+
+/* ══════════════════════════════════════════════
+   UTILS
+══════════════════════════════════════════════ */
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function aggData(){
+  document.getElementById('tDate').textContent=
+    new Date().toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+}
+function toast(msg,type='i'){
+  const t=document.createElement('div');
+  t.className='toast '+(type==='s'?'s':type==='e'?'e':'');
+  t.textContent=msg;
+  document.getElementById('tc').appendChild(t);
+  setTimeout(()=>t.remove(),3800);
+}
+function showErr(el,msg){ el.textContent=msg; el.style.display='block'; }
+function fd(d){ if(!d)return'—'; const[y,m,g]=d.split('-'); return g+'/'+m+'/'+y; }
+function nomeDaEmail(e){ return e.split('@')[0].replace(/[._]/g,' ').replace(/\b\w/g,c=>c.toUpperCase()); }
+function x(s){ if(!s)return''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function ph(n){ return String(n).padStart(2,'0'); }
+function ds(d){ return d.getFullYear()+'-'+ph(d.getMonth()+1)+'-'+ph(d.getDate()); }
+function getWeekStart(offset){
+  const d=new Date(); const day=d.getDay()||7;
+  d.setDate(d.getDate()-day+1+(offset||0)*7);
+  d.setHours(0,0,0,0); return d;
+}
+
+document.getElementById('lEmail').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('lPass').focus()});
+document.getElementById('lPass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
+</script>
+
+<!--
+═══════════════════════════════════════════════════════════════════════════
+ 📋  REGOLE FIRESTORE AGGIUNTIVE (aggiungi alle regole esistenti)
+═══════════════════════════════════════════════════════════════════════════
+
+    // ── STUDENTI ──
+    match /students/{studentId} {
+      allow read: if request.auth != null && request.auth.uid == studentId;
+      allow write: if false; // Solo admin via Console
+    }
+
+    // ── PRENOTAZIONI (aggiorna quelle esistenti) ──
+    match /bookings/{bookingId} {
+      allow read: if request.auth != null && (
+        request.auth.uid == resource.data.tutorId ||
+        request.auth.uid == resource.data.studentUid
+      );
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.studentUid;
+      allow update: if request.auth != null && (
+        request.auth.uid == resource.data.tutorId ||
+        request.auth.uid == resource.data.studentUid
+      );
+    }
+
+    // ── MATERIALI STUDENTI ──
+    match /materiali_studenti/{matId} {
+      allow read: if request.auth != null && (
+        resource.data.studentUids.hasAny([request.auth.uid]) ||
+        resource.data.visibileATutti == true
+      );
+      allow write: if false; // Solo admin via Console
+    }
+
+    // ── ANNOTAZIONI (private per studente) ──
+    match /annotations/{studentId}/materials/{matId}/items/{itemId} {
+      allow read, write: if request.auth != null
+                         && request.auth.uid == studentId;
+    }
+
+═══════════════════════════════════════════════════════════════════════════
+ 🗂️  GUIDA ADMIN — Come creare un account studente
+═══════════════════════════════════════════════════════════════════════════
+
+ STEP 1 — Firebase Authentication
+ → Firebase Console → Authentication → Users → "Add user"
+ → Inserisci email e password (sicura, min 8 char)
+ → Copia l'UID generato (es. ABC123xyz...)
+
+ STEP 2 — Firestore: crea documento studente
+ → Firestore → Database → Collezione: "students" → "Add document"
+ → Document ID: [incolla l'UID copiato sopra]
+ → Campi da aggiungere:
+    nome       (string)  → "Mario Rossi"          ← nome REALE, visibile solo allo studente
+    pseudonimo (string)  → "Mario #1"              ← nome che vede il tutor nel registro
+    email      (string)  → "mario@email.com"
+    tutorId    (string)  → [UID del tutor assegnato]  ← trovalo in tutors/{uid}
+    attivo     (boolean) → true
+    createdAt  (timestamp) → [data odierna]
+
+ STEP 3 — Aggiungi materiali (opzionale)
+ → Firestore → "materiali_studenti" → "Add document"
+ → Campi:
+    titolo        (string)  → "Grammatica Inglese Vol.1"
+    descrizione   (string)  → "Materiale base del corso"
+    tipo          (string)  → "drive" oppure "reader"
+    link          (string)  → URL Google Drive o URL PDF diretto
+    tutorId       (string)  → UID del tutor
+    studentUids   (array)   → [uid-studente-1, uid-studente-2, ...]
+    visibileATutti (boolean) → true  ← se visibile a tutti gli studenti del tutor
+    createdAt     (timestamp)
+
+ STEP 4 — Configura Resend
+ → In questo file, sostituisci INSERISCI_RESEND_API_KEY con la tua chiave API Resend
+ → Verifica che FROM_EMAIL usi il dominio già verificato (rcbacademy.com)
+
+ ⚠️  NOTA PRIVACY: il campo "nome" (nome reale) è visibile SOLO allo studente nella 
+ sua dashboard. Il tutor nel registro ore vede solo il "pseudonimo" (es. "Mario #1").
+═══════════════════════════════════════════════════════════════════════════
+-->
+</body>
+</html>
