@@ -1333,7 +1333,7 @@ async function saveManualBooking(){
  
 /* ── RESEND EMAIL ─────────────────────────────────── */
 async function sendBookingEmail({tutorEmail,tutorName,studentName,date,time,duration,meetLink,manual}){
- const RESEND_KEY='INSERISCI_RESEND_API_KEY'; // re_"p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCopiR2CfJEAibTLFvE0Spg328kABx5srY3S4Y1cTaQw9f+LkqN+BmVzigN0dbApaB0pQ5+tbWlfL1gCkGSkUyNfpwpo74YSo8Y8rAjSEu00HzaStUhLl6P51d4vjrVFnN8a5Zl9ZCqk06cQ8XgHkT0KeZQM+yA75Rgkf21mJqq+QIDAQAB"
+ const RESEND_KEY='re_MD5Rm9Kk_R5xeS5b3WR5MGCF8kSCf3pN4'; // re_"p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCopiR2CfJEAibTLFvE0Spg328kABx5srY3S4Y1cTaQw9f+LkqN+BmVzigN0dbApaB0pQ5+tbWlfL1gCkGSkUyNfpwpo74YSo8Y8rAjSEu00HzaStUhLl6P51d4vjrVFnN8a5Zl9ZCqk06cQ8XgHkT0KeZQM+yA75Rgkf21mJqq+QIDAQAB"
  if(RESEND_KEY.startsWith('INSERISCI')){ console.warn('[RCB] Resend key not set'); return; }
  const subject=manual
    ?'RCB Academy - Appuntamento aggiunto: '+studentName+' il '+date
